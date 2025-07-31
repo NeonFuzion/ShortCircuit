@@ -5,19 +5,19 @@ using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
-    [SerializeField] float speed, maxHeight;
-    [SerializeField] Transform battery, wireManager, projectileShadow, projectileVisual;
-    [SerializeField] GameObject prefabShrinkPoint;
+    [SerializeField] float spinSpeed, spinRange, launchSpeed, minDistance, maxDistance, speed, maxHeight;
+    [SerializeField] Transform battery, target, spinner, spinCenter, projectileShadow, projectileVisual;
+    [SerializeField] GameObject prefabWirePoint;
     [SerializeField] AnimationCurve trajectoryCurve;
 
-    int index;
-    float totalDistance, groundDirection;
+    int index, spinDirection;
+    float totalDistance, groundDirection, lastDirection;
     bool active, moving;
 
     new Rigidbody2D rigidbody;
-    LineRenderer wireLineRenderer;
     BoxCollider2D boxCollider;
     Vector2 startPosition, targetPosition;
+    InputMode inputMode;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -27,28 +27,50 @@ public class Player : MonoBehaviour
 
         rigidbody = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
-        wireLineRenderer = wireManager.GetComponent<LineRenderer>();
-        transform.position = battery.position;
-
-        PlacePeg();
+        Reset();
     }
 
     // Update is called once per frame
     void Update()
     {
-        wireLineRenderer.SetPosition(index, transform.position);
+        switch (inputMode)
+        {
+            case InputMode.Spinning:
+                float currentAngle = spinner.localEulerAngles.z;
+                float newDirection = currentAngle + spinDirection * spinSpeed * Time.deltaTime;
+                spinner.localEulerAngles = new(0, 0, Mathf.Clamp(newDirection, -spinRange, spinRange) + 180);
+
+                if (newDirection < spinRange && newDirection > -spinRange) break;
+                spinDirection *= -1;
+                break;
+            case InputMode.Stretching:
+                float currentDistance = -target.localPosition.y;
+                float newDistance = currentDistance + launchSpeed * Time.deltaTime * spinDirection;
+                target.localPosition = new(0, -Mathf.Clamp(newDistance, minDistance, maxDistance));
+
+                if (newDistance < maxDistance && newDistance > minDistance) break;
+                spinDirection *= -1;
+                break;
+            case InputMode.Launching:
+                ArcMovement();
+                break;
+        }
     }
 
-    void PlacePeg()
+    void Reset()
     {
-        wireLineRenderer.positionCount++;
-        wireLineRenderer.SetPosition(index++, transform.position);
+        lastDirection = spinner.eulerAngles.z;
+        spinCenter.localEulerAngles = new(0, 0, lastDirection);
+        spinner.localEulerAngles = new();
+        target.localPosition = Vector2.down;
+        spinDirection = 1;
+        inputMode = InputMode.Spinning;
     }
 
     void ArcMovement()
     {
         totalDistance = Vector2.Distance(startPosition, targetPosition);
-        transform.position += (Vector3)(targetPosition - startPosition).normalized * speed * Time.deltaTime;
+        transform.position += (Vector3)(targetPosition - startPosition).normalized * launchSpeed * Time.deltaTime;
 
         float distanceCovered = Vector2.Distance(transform.position, startPosition);
         float distanceProgress = distanceCovered / totalDistance;
@@ -63,6 +85,9 @@ public class Player : MonoBehaviour
         float trajectoryAngle = (1 - trajectoryCurveValue) * (distanceProgress > 0.5f ? -1 : 1) * maxHeight * 20;
         projectileVisual.transform.eulerAngles = Vector3.forward * (groundDirection + trajectoryAngle);
         projectileShadow.transform.eulerAngles = Vector3.forward * groundDirection;
+
+        if (distanceProgress < 1) return;
+        Reset();
     }
 
     public void Shrink()
@@ -74,17 +99,18 @@ public class Player : MonoBehaviour
 
     public void HandleMovement(InputAction.CallbackContext context)
     {
-        if (!active) return;
-        Vector2 input = context.ReadValue<Vector2>();
-
-        rigidbody.linearVelocity = input * speed;
-    }
-
-    public void HandlePlacing(InputAction.CallbackContext context)
-    {
-        if (!active) return;
-        if (!context.started) return;
-        PlacePeg();
+        if (context.started)
+        {
+            if (inputMode != InputMode.Spinning) return;
+            inputMode = InputMode.Stretching;
+        }
+        if (context.canceled)
+        {
+            if (inputMode != InputMode.Stretching) return;
+            inputMode = InputMode.Launching;
+            startPosition = transform.position;
+            targetPosition = startPosition + (Vector2)target.position;
+        }
     }
 
     public void HandleShrink(InputAction.CallbackContext context)
@@ -92,4 +118,6 @@ public class Player : MonoBehaviour
         if (!context.started) return;
         Shrink();
     }
+    
+    public enum InputMode { None, Spinning, Stretching, Launching }
 }

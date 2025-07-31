@@ -24,18 +24,11 @@ public class Wire : MonoBehaviour
     {
         if (!playerVisual) return;
         currentCooldown -= Time.deltaTime;
-        mub.position = playerVisual.position;
 
         if (currentCooldown > 0) return;
         currentCooldown = linePointCooldown;
         int index = lineRenderer.positionCount++;
         lineRenderer.SetPosition(index, playerVisual.position);
-        
-
-        if (lineRenderer.positionCount < 2) return;
-        bum.right = lineRenderer.GetPosition(1) - lineRenderer.GetPosition(0);
-        int endIndex = lineRenderer.positionCount - 1;
-        mub.right = lineRenderer.GetPosition(endIndex) - lineRenderer.GetPosition(endIndex - 1);
     }
 
     public void StartWiring(Transform playerVisual)

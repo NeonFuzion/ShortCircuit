@@ -1,13 +1,10 @@
 fileFormatVersion: 2
-guid: b6dc16d79d0eb9642857e38971cd7b44
+guid: 5cd69198cd35ae843be4343139b6588a
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -1987909847175724744
-    second: dog-Sheet_0
-  - first:
-      213: -5696481764690034616
-    second: dog-Sheet_1
+      213: -1200284075615530455
+    second: AimSprites_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -54,7 +51,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 32
+  spritePixelsToUnits: 8
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -116,45 +113,45 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: dog-Sheet_0
+      name: AimSprites_0
       rect:
         serializedVersion: 2
-        x: 9
-        y: 9
-        width: 16
-        height: 21
-      alignment: 9
-      pivot: {x: 0.06641126, y: 0.3879301}
+        x: 0
+        y: 0
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8310791c6868964e0800000000000000
-      internalID: -1987909847175724744
+      spriteID: 922d06b1efbb75fe0800000000000000
+      internalID: -1200284075615530455
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: dog-Sheet_1
+      name: AimSprites_1
       rect:
         serializedVersion: 2
-        x: 41
-        y: 9
-        width: 14
-        height: 15
-      alignment: 9
-      pivot: {x: 0.07152339, y: 0.53270304}
+        x: 8
+        y: 0
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 840092a240802f0b0800000000000000
-      internalID: -5696481764690034616
+      spriteID: 1c238d97c7a80844484bc9471f000c3f
+      internalID: -1752531628
       vertices: []
       indices: 
       edges: []
@@ -163,7 +160,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 12246d98fb9532243becea02dfe805c5
+    spriteID: d939fc4a59a2c284eb559d4cf534fb33
     internalID: 0
     vertices: []
     indices: 
@@ -171,10 +168,12 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":2.0,"y":1.0},"gridSpriteSize":{"x":8.0,"y":8.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      dog-Sheet_0: -1987909847175724744
-      dog-Sheet_1: -5696481764690034616
+      AimSprites_0: -1200284075615530455
+      AimSprites_1: -1752531628
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

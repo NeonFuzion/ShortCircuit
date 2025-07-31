@@ -6,27 +6,31 @@ using UnityEngine.InputSystem;
 public class Player : MonoBehaviour
 {
     [SerializeField] float spinSpeed, spinRange, launchSpeed, minDistance, maxDistance, speed, maxHeight;
-    [SerializeField] Transform battery, target, spinner, projectileShadow, projectileVisual;
+    [SerializeField] Transform battery, target, spinner, bum, projectileShadow, projectileVisual;
     [SerializeField] GameObject prefabWire;
+    [SerializeField] Sprite aimableSprite, unAimableSprite;
     [SerializeField] AnimationCurve trajectoryCurve;
 
     float totalDistance, groundDirection, lastDirection, currentAngle, currentDistance;
-    bool active, shrinking;
+    bool active, shrinking, starting;
 
     new Rigidbody2D rigidbody;
     BoxCollider2D boxCollider;
     Vector2 startPosition, targetPosition, directionVector, input;
     Wire currentWire;
     InputMode inputMode;
+    SpriteRenderer aimRenderer;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         active = true;
         shrinking = false;
+        starting = true;
 
         rigidbody = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
+        aimRenderer = target.GetComponent<SpriteRenderer>();
         transform.position = battery.position;
         Reset();
         inputMode = InputMode.Controlling;
@@ -44,14 +48,18 @@ public class Player : MonoBehaviour
 
                 currentDistance = Mathf.Clamp(currentDistance + input.y * launchSpeed * Time.deltaTime, minDistance, maxDistance);
                 target.localPosition = directionVector * currentDistance;
+                projectileVisual.eulerAngles = new(0, 0, currentAngle);
+
+                aimRenderer.sprite = IsPluggable() ? aimableSprite : unAimableSprite;
                 break;
             case InputMode.Launching:
                 ArcMovement();
                 target.position = targetPosition;
                 break;
-
         }
     }
+
+    bool IsPluggable() => !Physics2D.OverlapCircle(target.position, 0.1f, LayerMask.GetMask("Unpluggable"));
 
     void Reset()
     {
@@ -79,10 +87,11 @@ public class Player : MonoBehaviour
     void ArcMovement()
     {
         totalDistance = Vector2.Distance(startPosition, targetPosition);
-        transform.position += (Vector3)(targetPosition - startPosition).normalized * launchSpeed * Time.deltaTime;
+        Vector3 currentMovement = (Vector3)(targetPosition - startPosition).normalized * speed * Time.deltaTime;
+        transform.position += currentMovement;
 
         float distanceCovered = Vector2.Distance(transform.position, startPosition);
-        float distanceProgress = distanceCovered / totalDistance;
+        float distanceProgress = Mathf.Clamp(distanceCovered / totalDistance, 0, 1);
         float trajectoryCurveValue = trajectoryCurve.Evaluate(distanceProgress);
         float projectileHeight = trajectoryCurveValue * maxHeight * totalDistance / 8;
         projectileVisual.localPosition = Vector2.up * projectileHeight;
@@ -92,8 +101,12 @@ public class Player : MonoBehaviour
         groundDirection = (radians > 0 ? radians : radians + 2 * Mathf.PI) * 180 / Mathf.PI % 360;
 
         float trajectoryAngle = (1 - trajectoryCurveValue) * (distanceProgress > 0.5f ? -1 : 1) * maxHeight * 20;
-        projectileVisual.eulerAngles = Vector3.forward * (groundDirection + trajectoryAngle);
-        projectileShadow.eulerAngles = Vector3.forward * groundDirection;
+        Vector2 visualAngle = Vector3.forward * (trajectoryCurveValue > 0.1f ? (groundDirection + trajectoryAngle) : groundDirection);
+        Vector2 shadowAngle = Vector3.forward * groundDirection;
+        projectileVisual.eulerAngles = visualAngle;
+        projectileShadow.eulerAngles = shadowAngle;
+
+        bum.position = battery.position;
 
         if (distanceProgress < 1) return;
         Reset();
@@ -101,6 +114,10 @@ public class Player : MonoBehaviour
 
         if (!shrinking) return;
         Shrink();
+
+        if (!starting) return;
+        starting = false;
+        bum.eulerAngles = new(0, 0, currentAngle);
     }
 
     void Shrink()
@@ -132,6 +149,7 @@ public class Player : MonoBehaviour
     {
         if (!context.started) return;
         if (inputMode != InputMode.Controlling) return;
+        if (!IsPluggable()) return;
         directionVector = target.localPosition;
         currentDistance = minDistance;
         currentAngle = 0;

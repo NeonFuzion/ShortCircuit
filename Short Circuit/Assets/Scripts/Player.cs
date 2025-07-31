@@ -10,12 +10,12 @@ public class Player : MonoBehaviour
     [SerializeField] GameObject prefabWire;
     [SerializeField] AnimationCurve trajectoryCurve;
 
-    float totalDistance, groundDirection, lastDirection, inputTime, currentAngle, currentDistance;
+    float totalDistance, groundDirection, lastDirection, currentAngle, currentDistance;
     bool active, shrinking;
 
     new Rigidbody2D rigidbody;
     BoxCollider2D boxCollider;
-    Vector2 startPosition, targetPosition, directionVector;
+    Vector2 startPosition, targetPosition, directionVector, input;
     Wire currentWire;
     InputMode inputMode;
 
@@ -24,12 +24,12 @@ public class Player : MonoBehaviour
     {
         active = true;
         shrinking = false;
-        inputTime = 0;
 
         rigidbody = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
         transform.position = battery.position;
         Reset();
+        inputMode = InputMode.Controlling;
     }
 
     // Update is called once per frame
@@ -37,21 +37,19 @@ public class Player : MonoBehaviour
     {
         switch (inputMode)
         {
-            case InputMode.Spinning:
-                currentAngle = Mathf.PingPong(inputTime, spinRange * 2) - spinRange + lastDirection;
-                float radians = currentAngle * Mathf.PI / 180;
-                target.localPosition = new(Mathf.Cos(radians), Mathf.Sin(radians));
-                inputTime += spinSpeed * Time.deltaTime;
-                break;
-            case InputMode.Stretching:
-                currentDistance = Mathf.PingPong(inputTime, maxDistance - minDistance) + minDistance;
+            case InputMode.Controlling:
+                currentAngle = Mathf.Clamp(currentAngle - input.x * spinSpeed * Time.deltaTime, -spinRange, spinRange);
+                float radians = (currentAngle + lastDirection) * Mathf.PI / 180;
+                directionVector = new(Mathf.Cos(radians), Mathf.Sin(radians));
+
+                currentDistance = Mathf.Clamp(currentDistance + input.y * launchSpeed * Time.deltaTime, minDistance, maxDistance);
                 target.localPosition = directionVector * currentDistance;
-                inputTime += launchSpeed * Time.deltaTime;
                 break;
             case InputMode.Launching:
                 ArcMovement();
                 target.position = targetPosition;
                 break;
+
         }
     }
 
@@ -60,7 +58,7 @@ public class Player : MonoBehaviour
         lastDirection = Mathf.Atan2(directionVector.y, directionVector.x) * 180 / Mathf.PI;
         spinner.localEulerAngles = new();
         target.localPosition = Vector2.down;
-        inputMode = InputMode.Spinning;
+        inputMode = InputMode.Controlling;
 
         if (!currentWire) return;
         currentWire.EndWiring();
@@ -87,15 +85,15 @@ public class Player : MonoBehaviour
         float distanceProgress = distanceCovered / totalDistance;
         float trajectoryCurveValue = trajectoryCurve.Evaluate(distanceProgress);
         float projectileHeight = trajectoryCurveValue * maxHeight * totalDistance / 8;
-        projectileVisual.transform.localPosition = Vector2.up * projectileHeight;
+        projectileVisual.localPosition = Vector2.up * projectileHeight;
 
         Vector2 differenceVector = targetPosition - (Vector2)transform.position;
         float radians = Mathf.Atan2(differenceVector.y, differenceVector.x);
         groundDirection = (radians > 0 ? radians : radians + 2 * Mathf.PI) * 180 / Mathf.PI % 360;
 
         float trajectoryAngle = (1 - trajectoryCurveValue) * (distanceProgress > 0.5f ? -1 : 1) * maxHeight * 20;
-        projectileVisual.transform.eulerAngles = Vector3.forward * (groundDirection + trajectoryAngle);
-        projectileShadow.transform.eulerAngles = Vector3.forward * groundDirection;
+        projectileVisual.eulerAngles = Vector3.forward * (groundDirection + trajectoryAngle);
+        projectileShadow.eulerAngles = Vector3.forward * groundDirection;
 
         if (distanceProgress < 1) return;
         Reset();
@@ -108,6 +106,8 @@ public class Player : MonoBehaviour
     void Shrink()
     {
         SpawnWire();
+        startPosition = transform.position;
+        targetPosition = battery.position;
         inputMode = InputMode.Launching;
     }
 
@@ -125,23 +125,20 @@ public class Player : MonoBehaviour
 
     public void HandleMovement(InputAction.CallbackContext context)
     {
-        if (context.started)
-        {
-            if (inputMode != InputMode.Spinning) return;
-            directionVector = target.localPosition;
-            inputTime = 0;
-            inputMode = InputMode.Stretching;
-        }
-        if (context.canceled)
-        {
-            if (inputMode != InputMode.Stretching) return;
+        input = context.ReadValue<Vector2>();
+    }
 
-            startPosition = transform.position;
-            targetPosition = startPosition + directionVector * currentDistance;
-            SpawnWire();
-
-            inputMode = InputMode.Launching;
-        }
+    public void HandleState(InputAction.CallbackContext context)
+    {
+        if (!context.started) return;
+        if (inputMode != InputMode.Controlling) return;
+        directionVector = target.localPosition;
+        currentDistance = minDistance;
+        currentAngle = 0;
+        startPosition = transform.position;
+        targetPosition = startPosition + directionVector * currentDistance;
+        inputMode = InputMode.Launching;
+        SpawnWire();
     }
 
     public void HandleShrink(InputAction.CallbackContext context)
@@ -150,5 +147,5 @@ public class Player : MonoBehaviour
         Shrink();
     }
     
-    public enum InputMode { None, Spinning, Stretching, Launching }
+    public enum InputMode { None, Controlling, Launching }
 }

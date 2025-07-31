@@ -5,46 +5,43 @@ using UnityEngine;
 
 public class Wire : MonoBehaviour
 {
-    [SerializeField] Transform battery;
+    [SerializeField] float linePointCooldown;
 
+    Transform playerVisual;
     LineRenderer lineRenderer;
-    PolygonCollider2D polygonCollider;
 
-    List<Transform> positions;
-    Vector2[] points;
+    float currentCooldown;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        lineRenderer = GetComponent<LineRenderer>();
-        polygonCollider = GetComponent<PolygonCollider2D>();
 
-        positions = new() { battery };
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (lineRenderer.positionCount < 3) return;
-        points = new Vector2[lineRenderer.positionCount];
-        for (int i = 0; i < points.Length; i++)
-        {
-            points[i] = lineRenderer.GetPosition(i);
-        }
-        polygonCollider.points = points;
+        if (!playerVisual) return;
+        currentCooldown -= Time.deltaTime;
+
+        if (currentCooldown > 0) return;
+        currentCooldown = linePointCooldown;
+        int index = lineRenderer.positionCount++;
+        lineRenderer.SetPosition(index, playerVisual.position);
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    public void StartWiring(Transform playerVisual)
     {
-        if (other.GetComponent<Player>()) return;
-        if (!LayerMask.LayerToName(other.gameObject.layer).Equals("LightBulb")) return;
-        if (positions.Contains(other.transform)) return;
-        positions.Add(other.transform);
+        this.playerVisual = playerVisual;
+        lineRenderer = GetComponent<LineRenderer>();
+
+        currentCooldown = 0;
+        lineRenderer.SetPosition(0, playerVisual.position);
     }
 
-    public void Loop()
+    public void EndWiring()
     {
-        positions.Add(positions[0]);
-        lineRenderer.SetPositions(positions.Select(x => x.position).ToArray());
+        lineRenderer.SetPosition(lineRenderer.positionCount - 1, playerVisual.position);
+        playerVisual = null;
     }
 }

@@ -6,24 +6,24 @@ using UnityEngine.InputSystem;
 public class Player : MonoBehaviour
 {
     [SerializeField] float spinSpeed, spinRange, launchSpeed, minDistance, maxDistance, speed, maxHeight;
-    [SerializeField] Transform battery, target, spinner, spinCenter, projectileShadow, projectileVisual;
-    [SerializeField] GameObject prefabWirePoint;
+    [SerializeField] Transform battery, target, spinner, projectileShadow, projectileVisual;
+    [SerializeField] GameObject prefabWire;
     [SerializeField] AnimationCurve trajectoryCurve;
 
-    int index, spinDirection;
-    float totalDistance, groundDirection, lastDirection;
-    bool active, moving;
+    float totalDistance, groundDirection, lastDirection, inputTime, currentAngle, currentDistance;
+    bool active;
 
     new Rigidbody2D rigidbody;
     BoxCollider2D boxCollider;
-    Vector2 startPosition, targetPosition;
+    Vector2 startPosition, targetPosition, directionVector;
+    Wire currentWire;
     InputMode inputMode;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        index = 0;
         active = true;
+        inputTime = 0;
 
         rigidbody = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
@@ -36,35 +36,33 @@ public class Player : MonoBehaviour
         switch (inputMode)
         {
             case InputMode.Spinning:
-                float currentAngle = spinner.localEulerAngles.z;
-                float newDirection = currentAngle + spinDirection * spinSpeed * Time.deltaTime;
-                spinner.localEulerAngles = new(0, 0, Mathf.Clamp(newDirection, -spinRange, spinRange) + 180);
-
-                if (newDirection < spinRange && newDirection > -spinRange) break;
-                spinDirection *= -1;
+                currentAngle = Mathf.PingPong(inputTime, spinRange * 2) - spinRange + lastDirection;
+                float radians = currentAngle * Mathf.PI / 180;
+                target.localPosition = new(Mathf.Cos(radians), Mathf.Sin(radians));
+                inputTime += spinSpeed * Time.deltaTime;
                 break;
             case InputMode.Stretching:
-                float currentDistance = -target.localPosition.y;
-                float newDistance = currentDistance + launchSpeed * Time.deltaTime * spinDirection;
-                target.localPosition = new(0, -Mathf.Clamp(newDistance, minDistance, maxDistance));
-
-                if (newDistance < maxDistance && newDistance > minDistance) break;
-                spinDirection *= -1;
+                currentDistance = Mathf.PingPong(inputTime, maxDistance - minDistance) + minDistance;
+                target.localPosition = directionVector * currentDistance;
+                inputTime += launchSpeed * Time.deltaTime;
                 break;
             case InputMode.Launching:
                 ArcMovement();
+                target.position = targetPosition;
                 break;
         }
     }
 
     void Reset()
     {
-        lastDirection = spinner.eulerAngles.z;
-        spinCenter.localEulerAngles = new(0, 0, lastDirection);
+        lastDirection = Mathf.Atan2(directionVector.y, directionVector.x) * 180 / Mathf.PI;
         spinner.localEulerAngles = new();
         target.localPosition = Vector2.down;
-        spinDirection = 1;
         inputMode = InputMode.Spinning;
+
+        if (!currentWire) return;
+        currentWire.EndWiring();
+        currentWire = null;
     }
 
     void ArcMovement()
@@ -102,14 +100,21 @@ public class Player : MonoBehaviour
         if (context.started)
         {
             if (inputMode != InputMode.Spinning) return;
+            directionVector = target.localPosition;
+            inputTime = 0;
             inputMode = InputMode.Stretching;
         }
         if (context.canceled)
         {
             if (inputMode != InputMode.Stretching) return;
-            inputMode = InputMode.Launching;
+
             startPosition = transform.position;
-            targetPosition = startPosition + (Vector2)target.position;
+            targetPosition = startPosition + directionVector * currentDistance;
+            GameObject wire = Instantiate(prefabWire, transform.position, Quaternion.identity);
+            currentWire = wire.GetComponent<Wire>();
+            currentWire.StartWiring(projectileVisual);
+
+            inputMode = InputMode.Launching;
         }
     }
 

@@ -25,6 +25,7 @@ public class Timer : MonoBehaviour
 
         if (currentTime > 0) return;
         currentTime = -1;
+        tmp.SetText("Time's Up!");
         onTimeUp?.Invoke();
     }
 }

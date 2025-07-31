@@ -11,7 +11,7 @@ public class Player : MonoBehaviour
     [SerializeField] AnimationCurve trajectoryCurve;
 
     float totalDistance, groundDirection, lastDirection, inputTime, currentAngle, currentDistance;
-    bool active;
+    bool active, shrinking;
 
     new Rigidbody2D rigidbody;
     BoxCollider2D boxCollider;
@@ -23,10 +23,12 @@ public class Player : MonoBehaviour
     void Start()
     {
         active = true;
+        shrinking = false;
         inputTime = 0;
 
         rigidbody = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
+        transform.position = battery.position;
         Reset();
     }
 
@@ -65,6 +67,17 @@ public class Player : MonoBehaviour
         currentWire = null;
     }
 
+    void DetectBulbs()
+    {
+        foreach (Collider2D collider in Physics2D.OverlapCircleAll(transform.position, 0.6f))
+        {
+            LightBulb script = collider.GetComponent<LightBulb>();
+
+            if (!script) continue;
+            script.PowerBulb();
+        }
+    }
+
     void ArcMovement()
     {
         totalDistance = Vector2.Distance(startPosition, targetPosition);
@@ -86,13 +99,28 @@ public class Player : MonoBehaviour
 
         if (distanceProgress < 1) return;
         Reset();
+        DetectBulbs();
+
+        if (!shrinking) return;
+        Shrink();
     }
 
-    public void Shrink()
+    void Shrink()
     {
-        boxCollider.isTrigger = true;
-        transform.position = battery.position;
-        active = false;
+        SpawnWire();
+        inputMode = InputMode.Launching;
+    }
+
+    void SpawnWire()
+    {
+        GameObject wire = Instantiate(prefabWire, transform.position, Quaternion.identity);
+        currentWire = wire.GetComponent<Wire>();
+        currentWire.StartWiring(projectileVisual);
+    }
+
+    public void SetShrink()
+    {
+        shrinking = true;
     }
 
     public void HandleMovement(InputAction.CallbackContext context)
@@ -110,9 +138,7 @@ public class Player : MonoBehaviour
 
             startPosition = transform.position;
             targetPosition = startPosition + directionVector * currentDistance;
-            GameObject wire = Instantiate(prefabWire, transform.position, Quaternion.identity);
-            currentWire = wire.GetComponent<Wire>();
-            currentWire.StartWiring(projectileVisual);
+            SpawnWire();
 
             inputMode = InputMode.Launching;
         }

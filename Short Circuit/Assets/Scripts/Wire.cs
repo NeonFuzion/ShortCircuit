@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -6,6 +5,7 @@ using UnityEngine;
 public class Wire : MonoBehaviour
 {
     [SerializeField] float linePointCooldown;
+    [SerializeField] Color[] colors;
 
     Transform playerVisual;
     LineRenderer lineRenderer;
@@ -37,6 +37,12 @@ public class Wire : MonoBehaviour
 
         currentCooldown = 0;
         lineRenderer.SetPosition(0, playerVisual.position);
+
+        Gradient gradient = new();
+        GradientColorKey[] colorKeys = new GradientColorKey[1] { new(colors[Random.Range(0, colors.Length)], 0) };
+        GradientAlphaKey[] alphaKeys = lineRenderer.colorGradient.alphaKeys;
+        gradient.SetKeys(colorKeys, alphaKeys);
+        lineRenderer.colorGradient = gradient;
     }
 
     public void EndWiring()

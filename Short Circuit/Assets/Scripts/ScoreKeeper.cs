@@ -83,6 +83,7 @@ public class ScoreKeeper : MonoBehaviour
 
             if (positions.Count > 0) return;
             grading = false;
+            lineRenderer.positionCount = 1;
             StartGame();
         }
         else
@@ -123,7 +124,6 @@ public class ScoreKeeper : MonoBehaviour
         positions.Reverse();
         tracker.position = positions[0];
         positions.RemoveAt(positions.Count - 1);
-        lineRenderer.positionCount = 1;
         lineRenderer.SetPosition(0, tracker.position);
     }
 }

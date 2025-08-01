@@ -111,10 +111,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b0ec3625323749244b3f705326969c2e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  litSprite: {fileID: -4021652510367811384, guid: f7692e2ad8e36d34a9bcf48fdcfba9f2, type: 3}
-  unLitSprite: {fileID: 4163335551310552942, guid: f7692e2ad8e36d34a9bcf48fdcfba9f2, type: 3}
   firstTarget: {fileID: 7161977639982970295}
   secondTarget: {fileID: 5811704816573084768}
+  litSprite: {fileID: -4021652510367811384, guid: f7692e2ad8e36d34a9bcf48fdcfba9f2, type: 3}
+  unLitSprite: {fileID: 4163335551310552942, guid: f7692e2ad8e36d34a9bcf48fdcfba9f2, type: 3}
 --- !u!212 &5390603168174133681
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -158,7 +158,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 2
   m_Sprite: {fileID: 4163335551310552942, guid: f7692e2ad8e36d34a9bcf48fdcfba9f2, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0

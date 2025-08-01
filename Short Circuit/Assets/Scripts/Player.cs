@@ -18,8 +18,6 @@ public class Player : MonoBehaviour
     float totalDistance, groundDirection, lastDirection, currentAngle, currentDistance;
     bool active, shrinking, starting;
 
-    new Rigidbody2D rigidbody;
-    BoxCollider2D boxCollider;
     Vector2 startPosition, targetPosition, directionVector, input, spawnPosition;
     Vector3 newPosition;
     Wire currentWire;
@@ -34,8 +32,6 @@ public class Player : MonoBehaviour
         shrinking = false;
         starting = true;
 
-        rigidbody = GetComponent<Rigidbody2D>();
-        boxCollider = GetComponent<BoxCollider2D>();
         aimRenderer = target.GetComponent<SpriteRenderer>();
         lightBulbs = new();
         spawnPosition = battery.GetBatteryPositions()[0];

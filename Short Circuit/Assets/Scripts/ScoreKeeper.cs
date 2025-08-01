@@ -7,9 +7,8 @@ using UnityEngine.Events;
 
 public class ScoreKeeper : MonoBehaviour
 {
-    [SerializeField] float countCooldown, startTime;
-    [SerializeField] int lightBulbPoints, timePoints;
-    [SerializeField] TextMeshProUGUI scoreText, timerText;
+    [SerializeField] float startTime;
+    [SerializeField] TextMeshProUGUI timerText;
     [SerializeField] UnityEvent onTimeUp;
 
     float currentTime;
@@ -39,26 +38,5 @@ public class ScoreKeeper : MonoBehaviour
         currentTime = 0;
         timerText.SetText("Time's Up!");
         onTimeUp?.Invoke();
-    }
-
-    IEnumerator ScoringCoroutine()
-    {
-        yield return new WaitForSeconds(countCooldown);
-
-        int score = int.Parse(scoreText.text);
-        int newScore = score + lightBulbPoints;
-        scoreText.SetText(newScore.ToString());
-        lightBulbs[0].PowerBulb();
-        lightBulbs.RemoveAt(0);
-
-        if (lightBulbs.Count > 0)
-        StartCoroutine(ScoringCoroutine());
-    }
-
-    public void CountScore(List<LightBulb> lightBulbs)
-    {
-        this.lightBulbs = lightBulbs;
-        scoreText.SetText(Mathf.RoundToInt(currentTime * timePoints).ToString());
-        StartCoroutine(ScoringCoroutine());
     }
 }

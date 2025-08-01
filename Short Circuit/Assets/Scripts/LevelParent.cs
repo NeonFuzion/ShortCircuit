@@ -46,4 +46,33 @@ public class LevelParent : MonoBehaviour
         wireRenderer = currentWire.GetComponent<LineRenderer>();
         shadowRenderer = currentWire.transform.GetChild(0).GetComponent<LineRenderer>();
     }
+
+    public List<Vector2> GetWirePoints()
+    {
+        List<Vector2> points = new();
+        foreach (Transform child in wireParent)
+        {
+            LineRenderer lineRenderer = child.GetComponent<LineRenderer>();
+            for (int i = 0; i < lineRenderer.positionCount; i++)
+            {
+                points.Add(lineRenderer.GetPosition(i));
+            }
+        }
+        return points;
+    }
+
+    public void ClearLevel()
+    {
+        for (int i = 0; i < wireParent.childCount; i++)
+        {
+            GameObject wire = wireParent.GetChild(i).gameObject;
+            Destroy(wire);
+        }
+        for (int i = 0; i < componentParent.childCount; i++)
+        {
+            Transform component = componentParent.GetChild(i);
+            CircuitComponent script = component.GetComponent<CircuitComponent>();
+            script.DetachFromCircuit();
+        }
+    }
 }

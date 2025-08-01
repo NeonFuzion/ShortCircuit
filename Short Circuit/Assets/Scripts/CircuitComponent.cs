@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class CircuitComponent : MonoBehaviour
 {
-    [SerializeField] protected Transform firstTarget, secondTarget;
+    [SerializeField] protected Transform positiveTarget, negativeTarget;
 
     protected bool attached;
 
@@ -40,11 +40,17 @@ public class CircuitComponent : MonoBehaviour
         transform.localScale = Vector3.one * 1.2f;
     }
 
+    public void DetachFromCircuit()
+    {
+        attached = false;
+        transform.localScale = Vector3.one;
+    }
+
     public Vector2[] GetNearestPosition(Vector2 position)
     {
-        float firstDistance = Vector2.Distance(firstTarget.position, position);
-        float secondDistance = Vector2.Distance(secondTarget.position, position);
-        return firstDistance > secondDistance ? new Vector2[2] { secondTarget.position, firstTarget.position } :
-            new Vector2[2] { firstTarget.position, secondTarget.position };
+        float firstDistance = Vector2.Distance(positiveTarget.position, position);
+        float secondDistance = Vector2.Distance(negativeTarget.position, position);
+        return firstDistance > secondDistance ? new Vector2[2] { negativeTarget.position, positiveTarget.position } :
+            new Vector2[2] { positiveTarget.position, negativeTarget.position };
     }
 }

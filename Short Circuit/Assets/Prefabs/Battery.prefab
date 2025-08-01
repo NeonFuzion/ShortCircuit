@@ -136,8 +136,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36c9e2e5e2b42a0409c42e850a9246a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  firstTarget: {fileID: 6875081798969031105}
-  secondTarget: {fileID: 1406771569432031117}
+  positiveTarget: {fileID: 6875081798969031105}
+  negativeTarget: {fileID: 1406771569432031117}
   rightSideRespawn: 1
 --- !u!212 &6001363483884279000
 SpriteRenderer:

@@ -19,7 +19,7 @@ public class Battery : CircuitComponent
     public Vector2[] GetBatteryPositions()
     {
         return rightSideRespawn ?
-            new Vector2[2] { firstTarget.position, secondTarget.position } :
-            new Vector2[2] { secondTarget.position, firstTarget.position };
+            new Vector2[2] { positiveTarget.position, negativeTarget.position } :
+            new Vector2[2] { negativeTarget.position, positiveTarget.position };
     }
 }

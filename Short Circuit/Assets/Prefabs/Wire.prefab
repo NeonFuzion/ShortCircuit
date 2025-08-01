@@ -49,9 +49,7 @@ MonoBehaviour:
   linePointCooldown: 0.05
   shadowRenderer: {fileID: 771078225537033277}
   colors:
-  - {r: 1, g: 0, b: 0, a: 1}
-  - {r: 0, g: 1, b: 0, a: 1}
-  - {r: 0, g: 0, b: 1, a: 1}
+  - {r: 0.7169812, g: 0, b: 0, a: 1}
 --- !u!120 &5343247173648879356
 LineRenderer:
   serializedVersion: 2

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class Component : MonoBehaviour
+public class CircuitComponent : MonoBehaviour
 {
     [SerializeField] protected Transform firstTarget, secondTarget;
 

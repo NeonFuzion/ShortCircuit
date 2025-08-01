@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class LightBulb : Component
+public class LightBulb : CircuitComponent
 {
     [SerializeField] Sprite litSprite, unLitSprite;
 

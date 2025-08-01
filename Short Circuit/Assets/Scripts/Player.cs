@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
@@ -10,17 +11,20 @@ public class Player : MonoBehaviour
     [SerializeField] float spinSpeed, spinRange, launchSpeed, minDistance, maxDistance, speed, maxHeight;
     [SerializeField] Transform target, spinner, bum, projectileShadow, projectileVisual;
     [SerializeField] GameObject prefabWire;
-    [SerializeField] Battery battery;
     [SerializeField] Sprite aimableSprite, unAimableSprite;
     [SerializeField] AnimationCurve trajectoryCurve;
-    [SerializeField] UnityEvent<List<LightBulb>> onEndGame;
+    [SerializeField] UnityEvent<List<CircuitComponent>> onEndGame;
+    [SerializeField] UnityEvent<Transform> onSetTargetPosition;
 
     float totalDistance, groundDirection, lastDirection, currentAngle, currentDistance;
     bool active, shrinking, starting;
+    int max;
 
     Vector2 startPosition, targetPosition, directionVector, input, spawnPosition;
     Vector3 newPosition;
+    Transform levelTarget;
     Wire currentWire;
+    Battery battery;
     InputMode inputMode;
     SpriteRenderer aimRenderer;
     List<LightBulb> lightBulbs;
@@ -28,24 +32,17 @@ public class Player : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        active = true;
         shrinking = false;
         starting = true;
 
         aimRenderer = target.GetComponent<SpriteRenderer>();
-        lightBulbs = new();
-        spawnPosition = battery.GetBatteryPositions()[0];
-        transform.position = spawnPosition;
-        bum.position = spawnPosition;
-        inputMode = InputMode.Controlling;
-        newPosition = Vector3.back;
-
-        Reset();
+        StartLevel();
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (!active) return;
         switch (inputMode)
         {
             case InputMode.Controlling:
@@ -69,6 +66,19 @@ public class Player : MonoBehaviour
 
     bool IsPluggable() => !Physics2D.OverlapCircle(target.position, 0.1f, LayerMask.GetMask("Unpluggable"));
 
+    Vector2[] DetectComponentAtTarget()
+    {
+        foreach (Collider2D collider in Physics2D.OverlapCircleAll(target.position, 0.6f))
+        {
+            CircuitComponent script = collider.GetComponent<CircuitComponent>();
+
+            if (lightBulbs.Contains(script)) continue;
+            if (!script) continue;
+            return script.GetNearestPosition(target.position);
+        }
+        return new Vector2[0];
+    }
+
     void Reset()
     {
         lastDirection = Mathf.Atan2(directionVector.y, directionVector.x) * 180 / Mathf.PI;
@@ -81,29 +91,24 @@ public class Player : MonoBehaviour
         currentWire = null;
     }
 
-    Vector2[] DetectComponentAtTarget()
-    {
-        foreach (Collider2D collider in Physics2D.OverlapCircleAll(target.position, 0.6f))
-        {
-            Component script = collider.GetComponent<Component>();
-
-            if (lightBulbs.Contains(script)) continue;
-            if (!script) continue;
-            return script.GetNearestPosition(transform.position);
-        }
-        return new Vector2[0];
-    }
-
-    void DetectComponent()
+    void DetectAfterLanding()
     {
         foreach (Collider2D collider in Physics2D.OverlapCircleAll(transform.position, 0.6f))
         {
-            Component script = collider.GetComponent<Component>();
-
-            if (lightBulbs.Contains(script)) continue;
-            if (!script) continue;
-            if (script as LightBulb) lightBulbs.Add(script as LightBulb);
-            else if (script as Battery) DetectBattery();
+            if (LayerMask.LayerToName(collider.gameObject.layer).Equals("Danger"))
+            {
+                Destroy(currentWire.gameObject);
+                currentWire = null;
+                transform.position = startPosition;
+            }
+            
+            CircuitComponent script = collider.GetComponent<CircuitComponent>();
+            if (script)
+            {
+                if (lightBulbs.Contains(script)) continue;
+                if (script as LightBulb) lightBulbs.Add(script as LightBulb);
+                else if (script as Battery && max != 0 && max == lightBulbs.Count) DetectBattery();
+            }
         }
     }
 
@@ -138,8 +143,8 @@ public class Player : MonoBehaviour
         bum.position = spawnPosition;
 
         if (distanceProgress < 1) return;
+        DetectAfterLanding();
         Reset();
-        DetectComponent();
         ConnectBulbs();
 
         if (!shrinking) return;
@@ -160,10 +165,10 @@ public class Player : MonoBehaviour
 
     void DetectBattery()
     {
-        onEndGame?.Invoke(lightBulbs);
+        onEndGame?.Invoke(lightBulbs.Select(x => x as CircuitComponent).ToList());
+        onSetTargetPosition?.Invoke(levelTarget);
         projectileVisual.eulerAngles = new();
         active = false;
-        enabled = false;
     }
 
     void SpawnWire()
@@ -178,13 +183,40 @@ public class Player : MonoBehaviour
         shrinking = true;
     }
 
+    public void StartLevel()
+    {
+        active = true;
+        
+        lightBulbs = new();
+        spawnPosition = battery.GetBatteryPositions()[0];
+        transform.position = spawnPosition;
+        bum.position = spawnPosition;
+        inputMode = InputMode.Controlling;
+        newPosition = Vector3.back;
+
+        Reset();
+    }
+
+    public void SetBattery(Battery battery)
+    {
+        this.battery = battery;
+    }
+
+    public void Initialize(int max, Transform endTarget)
+    {
+        this.max = max;
+        levelTarget = endTarget;
+    }
+
     public void HandleMovement(InputAction.CallbackContext context)
     {
+        if (!active) return;
         input = context.ReadValue<Vector2>();
     }
 
     public void HandleState(InputAction.CallbackContext context)
     {
+        if (!active) return;
         if (!context.started) return;
         if (inputMode != InputMode.Controlling) return;
         if (!IsPluggable()) return;

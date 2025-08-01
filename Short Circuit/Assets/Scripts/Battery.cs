@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class Battery : Component
+public class Battery : CircuitComponent
 {
     [SerializeField] bool rightSideRespawn;
 

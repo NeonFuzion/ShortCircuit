@@ -8,8 +8,9 @@ using UnityEngine.InputSystem;
 public class Player : MonoBehaviour
 {
     [SerializeField] float spinSpeed, spinRange, launchSpeed, minDistance, maxDistance, speed, maxHeight;
-    [SerializeField] Transform battery, target, spinner, bum, projectileShadow, projectileVisual;
+    [SerializeField] Transform target, spinner, bum, projectileShadow, projectileVisual;
     [SerializeField] GameObject prefabWire;
+    [SerializeField] Battery battery;
     [SerializeField] Sprite aimableSprite, unAimableSprite;
     [SerializeField] AnimationCurve trajectoryCurve;
     [SerializeField] UnityEvent<List<LightBulb>> onEndGame;
@@ -19,7 +20,7 @@ public class Player : MonoBehaviour
 
     new Rigidbody2D rigidbody;
     BoxCollider2D boxCollider;
-    Vector2 startPosition, targetPosition, directionVector, input;
+    Vector2 startPosition, targetPosition, directionVector, input, spawnPosition;
     Vector3 newPosition;
     Wire currentWire;
     InputMode inputMode;
@@ -37,7 +38,9 @@ public class Player : MonoBehaviour
         boxCollider = GetComponent<BoxCollider2D>();
         aimRenderer = target.GetComponent<SpriteRenderer>();
         lightBulbs = new();
-        transform.position = battery.position;
+        spawnPosition = battery.GetBatteryPositions()[0];
+        transform.position = spawnPosition;
+        bum.position = spawnPosition;
         inputMode = InputMode.Controlling;
         newPosition = Vector3.back;
 
@@ -82,24 +85,36 @@ public class Player : MonoBehaviour
         currentWire = null;
     }
 
-    Vector2[] DetectBulbs()
+    Vector2[] DetectComponentAtTarget()
     {
         foreach (Collider2D collider in Physics2D.OverlapCircleAll(target.position, 0.6f))
         {
-            LightBulb script = collider.GetComponent<LightBulb>();
+            Component script = collider.GetComponent<Component>();
 
             if (lightBulbs.Contains(script)) continue;
             if (!script) continue;
-            lightBulbs.Add(script);
             return script.GetNearestPosition(transform.position);
         }
         return new Vector2[0];
     }
 
+    void DetectComponent()
+    {
+        foreach (Collider2D collider in Physics2D.OverlapCircleAll(transform.position, 0.6f))
+        {
+            Component script = collider.GetComponent<Component>();
+
+            if (lightBulbs.Contains(script)) continue;
+            if (!script) continue;
+            if (script as LightBulb) lightBulbs.Add(script as LightBulb);
+            else if (script as Battery) DetectBattery();
+        }
+    }
+
     void ConnectBulbs()
     {
         if (newPosition.z < 0) return;
-        transform.position = newPosition;
+        if (active) transform.position = newPosition;
         newPosition = Vector3.back;
         lightBulbs[lightBulbs.Count - 1].AttachToCircuit();
     }
@@ -124,12 +139,12 @@ public class Player : MonoBehaviour
         projectileVisual.eulerAngles = Vector3.forward * (trajectoryCurveValue > 0.1f ? (groundDirection + trajectoryAngle) : groundDirection);
         projectileShadow.eulerAngles = Vector3.forward * groundDirection;
 
-        bum.position = battery.position;
+        bum.position = spawnPosition;
 
         if (distanceProgress < 1) return;
         Reset();
+        DetectComponent();
         ConnectBulbs();
-        DetectBattery();
 
         if (!shrinking) return;
         EndGame();
@@ -143,14 +158,15 @@ public class Player : MonoBehaviour
     {
         SpawnWire();
         startPosition = transform.position;
-        targetPosition = battery.position;
+        targetPosition = battery.GetBatteryPositions()[1];
         inputMode = InputMode.Launching;
     }
 
     void DetectBattery()
     {
-        if (Vector2.Distance(transform.position, battery.position) > 1f || lightBulbs.Count == 0) return;
         onEndGame?.Invoke(lightBulbs);
+        projectileVisual.eulerAngles = new();
+        active = false;
         enabled = false;
     }
 
@@ -158,7 +174,7 @@ public class Player : MonoBehaviour
     {
         GameObject wire = Instantiate(prefabWire, transform.position, Quaternion.identity);
         currentWire = wire.GetComponent<Wire>();
-        currentWire.StartWiring(projectileVisual);
+        currentWire.StartWiring(projectileVisual, projectileShadow);
     }
 
     public void SetShrink()
@@ -181,7 +197,7 @@ public class Player : MonoBehaviour
         currentAngle = 0;
 
         startPosition = transform.position;
-        Vector2[] bulbPositions = DetectBulbs();
+        Vector2[] bulbPositions = DetectComponentAtTarget();
         if (bulbPositions.Length > 0)
         {
             targetPosition = bulbPositions[0];

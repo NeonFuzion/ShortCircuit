@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
@@ -10,6 +12,7 @@ public class Player : MonoBehaviour
     [SerializeField] GameObject prefabWire;
     [SerializeField] Sprite aimableSprite, unAimableSprite;
     [SerializeField] AnimationCurve trajectoryCurve;
+    [SerializeField] UnityEvent<List<LightBulb>> onEndGame;
 
     float totalDistance, groundDirection, lastDirection, currentAngle, currentDistance;
     bool active, shrinking, starting;
@@ -17,9 +20,11 @@ public class Player : MonoBehaviour
     new Rigidbody2D rigidbody;
     BoxCollider2D boxCollider;
     Vector2 startPosition, targetPosition, directionVector, input;
+    Vector3 newPosition;
     Wire currentWire;
     InputMode inputMode;
     SpriteRenderer aimRenderer;
+    List<LightBulb> lightBulbs;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -31,9 +36,12 @@ public class Player : MonoBehaviour
         rigidbody = GetComponent<Rigidbody2D>();
         boxCollider = GetComponent<BoxCollider2D>();
         aimRenderer = target.GetComponent<SpriteRenderer>();
+        lightBulbs = new();
         transform.position = battery.position;
-        Reset();
         inputMode = InputMode.Controlling;
+        newPosition = Vector3.back;
+
+        Reset();
     }
 
     // Update is called once per frame
@@ -73,15 +81,26 @@ public class Player : MonoBehaviour
         currentWire = null;
     }
 
-    void DetectBulbs()
+    Vector2[] DetectBulbs()
     {
-        foreach (Collider2D collider in Physics2D.OverlapCircleAll(transform.position, 0.6f))
+        foreach (Collider2D collider in Physics2D.OverlapCircleAll(target.position, 0.6f))
         {
             LightBulb script = collider.GetComponent<LightBulb>();
 
+            if (lightBulbs.Contains(script)) continue;
             if (!script) continue;
-            script.PowerBulb();
+            lightBulbs.Add(script);
+            return script.GetNearestPosition(transform.position);
         }
+        return new Vector2[0];
+    }
+
+    void ConnectBulbs()
+    {
+        if (newPosition.z < 0) return;
+        transform.position = newPosition;
+        newPosition = Vector3.back;
+        lightBulbs[lightBulbs.Count - 1].AttachToCircuit();
     }
 
     void ArcMovement()
@@ -110,22 +129,30 @@ public class Player : MonoBehaviour
 
         if (distanceProgress < 1) return;
         Reset();
-        DetectBulbs();
+        ConnectBulbs();
+        DetectBattery();
 
         if (!shrinking) return;
-        Shrink();
+        EndGame();
 
         if (!starting) return;
         starting = false;
         bum.eulerAngles = new(0, 0, currentAngle);
     }
 
-    void Shrink()
+    void EndGame()
     {
         SpawnWire();
         startPosition = transform.position;
         targetPosition = battery.position;
         inputMode = InputMode.Launching;
+    }
+
+    void DetectBattery()
+    {
+        if (Vector2.Distance(transform.position, battery.position) > 1f || lightBulbs.Count == 0) return;
+        onEndGame?.Invoke(lightBulbs);
+        enabled = false;
     }
 
     void SpawnWire()
@@ -153,8 +180,19 @@ public class Player : MonoBehaviour
         directionVector = target.localPosition;
         currentDistance = minDistance;
         currentAngle = 0;
+
         startPosition = transform.position;
-        targetPosition = startPosition + directionVector * currentDistance;
+        Vector2[] bulbPositions = DetectBulbs();
+        if (bulbPositions.Length > 0)
+        {
+            targetPosition = bulbPositions[0];
+            newPosition = bulbPositions[1];
+        }
+        else
+        {
+            targetPosition = startPosition + directionVector * currentDistance;
+        }
+
         inputMode = InputMode.Launching;
         SpawnWire();
     }
@@ -162,7 +200,7 @@ public class Player : MonoBehaviour
     public void HandleShrink(InputAction.CallbackContext context)
     {
         if (!context.started) return;
-        Shrink();
+        EndGame();
     }
     
     public enum InputMode { None, Controlling, Launching }

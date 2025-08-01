@@ -42,8 +42,8 @@ public class ScoreKeeper : MonoBehaviour
         currentTime = levelManager.CurrentLevel.Time;
         allCircuitComponents = levelManager.CurrentCircuitComponents;
         currentCircuitComponents = new();
-        player.SetBattery(levelManager.CurrentLevel.Battery);
-        player.Initialize(allCircuitComponents.Count, levelManager.CurrentLevel.transform);
+        LevelParent level = levelManager.CurrentLevel;
+        player.Initialize(allCircuitComponents.Count, level.transform, level.Battery);
         onStartLevel?.Invoke();
     }
 

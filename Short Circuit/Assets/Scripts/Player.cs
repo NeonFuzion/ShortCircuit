@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
@@ -8,25 +9,25 @@ using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
-    [SerializeField] float spinSpeed, spinRange, launchSpeed, minDistance, maxDistance, speed, maxHeight;
+    [SerializeField] float spinSpeed, spinRange, launchSpeed, minDistance, maxDistance, speed, maxHeight, wirePointCooldown;
     [SerializeField] Transform target, spinner, bum, projectileShadow, projectileVisual;
-    [SerializeField] GameObject prefabWire;
     [SerializeField] Sprite aimableSprite, unAimableSprite;
     [SerializeField] AnimationCurve trajectoryCurve;
+    [SerializeField] LevelManager levelManager;
     [SerializeField] UnityEvent<List<CircuitComponent>> onEndGame;
     [SerializeField] UnityEvent<Transform> onSetTargetPosition;
 
-    float totalDistance, groundDirection, lastDirection, currentAngle, currentDistance;
+    float totalDistance, groundDirection, lastDirection, currentAngle, currentDistance, currentWiringTime;
     bool active, shrinking, starting;
     int max;
 
     Vector2 startPosition, targetPosition, directionVector, input, spawnPosition;
     Vector3 newPosition;
     Transform levelTarget;
-    Wire currentWire;
     Battery battery;
     InputMode inputMode;
     SpriteRenderer aimRenderer;
+    LineRenderer wireRenderer, shadowRenderer;
     List<LightBulb> lightBulbs;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -85,23 +86,18 @@ public class Player : MonoBehaviour
         spinner.localEulerAngles = new();
         target.localPosition = Vector2.down;
         inputMode = InputMode.Controlling;
-
-        if (!currentWire) return;
-        currentWire.EndWiring();
-        currentWire = null;
     }
 
     void DetectAfterLanding()
     {
+        WireHandle(0);
         foreach (Collider2D collider in Physics2D.OverlapCircleAll(transform.position, 0.6f))
         {
             if (LayerMask.LayerToName(collider.gameObject.layer).Equals("Danger"))
             {
-                Destroy(currentWire.gameObject);
-                currentWire = null;
                 transform.position = startPosition;
             }
-            
+
             CircuitComponent script = collider.GetComponent<CircuitComponent>();
             if (script)
             {
@@ -115,9 +111,12 @@ public class Player : MonoBehaviour
     void ConnectBulbs()
     {
         if (newPosition.z < 0) return;
-        if (active) transform.position = newPosition;
+        if (!active) return;
+        WireHandle(2);
+        transform.position = newPosition;
         newPosition = Vector3.back;
         lightBulbs[lightBulbs.Count - 1].AttachToCircuit();
+        WireHandle(-1);
     }
 
     void ArcMovement()
@@ -141,6 +140,7 @@ public class Player : MonoBehaviour
         projectileShadow.eulerAngles = Vector3.forward * groundDirection;
 
         bum.position = spawnPosition;
+        WireHandle(1);
 
         if (distanceProgress < 1) return;
         DetectAfterLanding();
@@ -155,9 +155,47 @@ public class Player : MonoBehaviour
         bum.eulerAngles = new(0, 0, currentAngle);
     }
 
+    void WireHandle(int phase)
+    {
+        currentWiringTime -= Time.deltaTime;
+
+        switch (phase)
+        {
+            case -1:
+                LevelParent level = levelManager.CurrentLevel;
+                level.CreateWire();
+                wireRenderer = level.WireRenderer;
+                shadowRenderer = level.ShadowRenderer;
+                wireRenderer.SetPosition(0, projectileVisual.position);
+                shadowRenderer.SetPosition(0, projectileShadow.position);
+                break;
+            case 0:
+                int index = wireRenderer.positionCount++;
+                wireRenderer.SetPosition(index, projectileVisual.position);
+                index = shadowRenderer.positionCount++;
+                shadowRenderer.SetPosition(index, projectileShadow.position);
+                break;
+            case 1:
+                if (currentWiringTime > 0) break;
+                currentWiringTime = wirePointCooldown;
+                index = wireRenderer.positionCount++;
+                wireRenderer.SetPosition(index, projectileVisual.position);
+                index = shadowRenderer.positionCount - 1;
+                shadowRenderer.SetPosition(index, projectileShadow.position);
+                break;
+            case 2:
+                index = wireRenderer.positionCount++;
+                wireRenderer.SetPosition(index, projectileVisual.position);
+                index = shadowRenderer.positionCount++;
+                shadowRenderer.SetPosition(index, projectileShadow.position);
+                wireRenderer = null;
+                shadowRenderer = null;
+                break;
+        }
+    }
+
     void EndGame()
     {
-        SpawnWire();
         startPosition = transform.position;
         targetPosition = battery.GetBatteryPositions()[1];
         inputMode = InputMode.Launching;
@@ -169,13 +207,6 @@ public class Player : MonoBehaviour
         onSetTargetPosition?.Invoke(levelTarget);
         projectileVisual.eulerAngles = new();
         active = false;
-    }
-
-    void SpawnWire()
-    {
-        GameObject wire = Instantiate(prefabWire, transform.position, Quaternion.identity);
-        currentWire = wire.GetComponent<Wire>();
-        currentWire.StartWiring(projectileVisual, projectileShadow);
     }
 
     public void SetShrink()
@@ -194,18 +225,15 @@ public class Player : MonoBehaviour
         inputMode = InputMode.Controlling;
         newPosition = Vector3.back;
 
+        WireHandle(-1);
         Reset();
     }
 
-    public void SetBattery(Battery battery)
-    {
-        this.battery = battery;
-    }
-
-    public void Initialize(int max, Transform endTarget)
+    public void Initialize(int max, Transform levelTarget, Battery battery)
     {
         this.max = max;
-        levelTarget = endTarget;
+        this.battery = battery;
+        this.levelTarget = levelTarget;
     }
 
     public void HandleMovement(InputAction.CallbackContext context)
@@ -236,8 +264,8 @@ public class Player : MonoBehaviour
             targetPosition = startPosition + directionVector * currentDistance;
         }
 
+        WireHandle(0);
         inputMode = InputMode.Launching;
-        SpawnWire();
     }
 
     public void HandleShrink(InputAction.CallbackContext context)

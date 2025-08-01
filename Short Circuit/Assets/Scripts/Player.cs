@@ -56,7 +56,8 @@ public class Player : MonoBehaviour
 
                 currentDistance = Mathf.Clamp(currentDistance + input.y * launchSpeed * Time.deltaTime, minDistance, maxDistance);
                 target.localPosition = directionVector * currentDistance;
-                projectileVisual.eulerAngles = new(0, 0, currentAngle);
+                projectileVisual.eulerAngles = new(0, 0, currentAngle + lastDirection);
+                projectileVisual.localScale = new(1, directionVector.x > 0 ? 1 : -1, 1);
 
                 aimRenderer.sprite = IsPluggable() ? aimableSprite : unAimableSprite;
                 break;
@@ -120,10 +121,8 @@ public class Player : MonoBehaviour
         groundDirection = (radians > 0 ? radians : radians + 2 * Mathf.PI) * 180 / Mathf.PI % 360;
 
         float trajectoryAngle = (1 - trajectoryCurveValue) * (distanceProgress > 0.5f ? -1 : 1) * maxHeight * 20;
-        Vector2 visualAngle = Vector3.forward * (trajectoryCurveValue > 0.1f ? (groundDirection + trajectoryAngle) : groundDirection);
-        Vector2 shadowAngle = Vector3.forward * groundDirection;
-        projectileVisual.eulerAngles = visualAngle;
-        projectileShadow.eulerAngles = shadowAngle;
+        projectileVisual.eulerAngles = Vector3.forward * (trajectoryCurveValue > 0.1f ? (groundDirection + trajectoryAngle) : groundDirection);
+        projectileShadow.eulerAngles = Vector3.forward * groundDirection;
 
         bum.position = battery.position;
 

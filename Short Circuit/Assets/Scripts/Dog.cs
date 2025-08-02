@@ -71,7 +71,7 @@ public class Dog : MonoBehaviour
 
         startPosition = transform.position;
         endPosition = startPosition + wanderVector * distance;
-        transform.localScale = new(wanderVector.x > 0 ? 1 : -1, transform.localScale.y, transform.localScale.z);
+        transform.GetChild(0).localScale = new(wanderVector.x > 0 ? 1 : -1, transform.localScale.y, transform.localScale.z);
         animator.CrossFade("Walk", 0, 0);
     }
     

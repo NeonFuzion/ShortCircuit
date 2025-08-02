@@ -32,6 +32,7 @@ public class MainCamera : MonoBehaviour
 
     private void FollowTargets()
     {
+        if (focusTargets.Count == 0) return;
         float yAvg = 0;
         float xAvg = 0;
         focusTargets.ForEach(obj => { yAvg += obj.position.y; xAvg += obj.position.x; });

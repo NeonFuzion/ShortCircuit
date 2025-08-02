@@ -131,7 +131,7 @@ MonoBehaviour:
   wanderMin: 3
   wanderMax: 6
   speed: 5
-  runSpeedMultiplier: 1.5
+  runSpeedMultiplier: 1.2
   playerDetectRadius: 3
   onBreakCircuit:
     m_PersistentCalls:

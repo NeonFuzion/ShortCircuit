@@ -3,12 +3,13 @@ using UnityEngine;
 
 public class LevelManager : MonoBehaviour
 {
-    [SerializeField] GameObject[] levelParents;
+    [SerializeField] Transform levels;
 
     int index;
 
     LevelParent currentLevel;
     List<CircuitComponent> currentCircuitComponents;
+    GameObject[] levelParents;
 
     public LevelParent CurrentLevel { get => currentLevel; }
     public List<CircuitComponent> CurrentCircuitComponents { get => currentCircuitComponents; }
@@ -17,7 +18,14 @@ public class LevelManager : MonoBehaviour
     {
         index = 0;
 
-        for (int i = 1; i < levelParents.Length; i++) levelParents[i].SetActive(false);
+        levelParents = new GameObject[levels.childCount];
+        for (int i = 0; i < levelParents.Length; i++)
+        {
+            levelParents[i] = levels.GetChild(i).gameObject;
+
+            if (i == 0) continue;
+            levelParents[i].SetActive(false);
+        }
 
         InitializeLevel();
     }

@@ -17,8 +17,9 @@ public class LightBulb : CircuitComponent
 
     }
 
-    public void ResetLightBulb()
+    public override void ResetComponent()
     {
+        base.ResetComponent();
         spriteRenderer.sprite = unLitSprite;
     }
 

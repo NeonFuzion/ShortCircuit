@@ -3,6 +3,8 @@ using UnityEngine;
 public class CircuitComponent : MonoBehaviour
 {
     [SerializeField] protected Transform positiveTarget, negativeTarget;
+    [SerializeField] protected Sprite unpolarizedSprite;
+    [SerializeField] protected bool isPolarized;
 
     protected bool attached, isPassable;
 
@@ -13,10 +15,9 @@ public class CircuitComponent : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     protected void Start()
     {
-        attached = false;
-        isPassable = false;
-
         spriteRenderer = GetComponent<SpriteRenderer>();
+
+        ResetComponent();
     }
 
     // Update is called once per frame
@@ -48,6 +49,16 @@ public class CircuitComponent : MonoBehaviour
         float positiveDistance = Vector2.Distance(positiveTarget.position, position);
         float negativeDistance = Vector2.Distance(negativeTarget.position, position);
         return positiveDistance > negativeDistance ? negativeTarget : positiveTarget;
+    }
+
+    public virtual void ResetComponent()
+    {
+        attached = false;
+        isPassable = !isPolarized;
+
+        if (isPolarized) return;
+        positiveTarget.GetComponent<SpriteRenderer>().sprite = unpolarizedSprite;
+        negativeTarget.GetComponent<SpriteRenderer>().sprite = unpolarizedSprite;
     }
 
     public void AttachToCircuit()

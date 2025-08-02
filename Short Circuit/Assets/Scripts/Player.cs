@@ -18,7 +18,7 @@ public class Player : MonoBehaviour
     [SerializeField] UnityEvent<Transform> onStartGame;
 
     float totalDistance, groundDirection, lastDirection, currentAngle, currentDistance, currentWiringTime;
-    bool active, shrinking, starting;
+    bool active, shrinking, starting, foundBattery;
     int max;
 
     Vector2 startPosition, targetPosition, directionVector, input, spawnPosition;
@@ -94,9 +94,8 @@ public class Player : MonoBehaviour
             CircuitComponent script = collider.GetComponent<CircuitComponent>();
             if (script)
             {
-                if (lightBulbs.Contains(script)) continue;
-                if (script as LightBulb) lightBulbs.Add(script as LightBulb);
-                else if ((script as Battery && max != 0 && max == lightBulbs.Count) || shrinking) DetectBattery();
+                if (!lightBulbs.Contains(script) && script as LightBulb) lightBulbs.Add(script as LightBulb);
+                else if ((script as Battery && max == lightBulbs.Count) || shrinking) DetectBattery();
             }
         }
     }
@@ -106,7 +105,7 @@ public class Player : MonoBehaviour
         if (newPosition.z < 0) return;
         if (!active) return;
         WireHandle(2);
-        transform.position = newPosition;
+        if (!foundBattery) transform.position = newPosition;
         newPosition = Vector3.back;
         if (lightBulbs.Count > 0) lightBulbs[lightBulbs.Count - 1].AttachToCircuit();
         WireHandle(-1);
@@ -132,7 +131,6 @@ public class Player : MonoBehaviour
         projectileVisual.eulerAngles = Vector3.forward * (trajectoryCurveValue > 0.1f ? (groundDirection + trajectoryAngle) : groundDirection);
         projectileShadow.eulerAngles = Vector3.forward * groundDirection;
 
-        bum.position = spawnPosition;
         WireHandle(1);
 
         if (distanceProgress < 1) return;
@@ -207,6 +205,7 @@ public class Player : MonoBehaviour
     public void StartLevel()
     {
         active = true;
+        foundBattery = false;
         
         lightBulbs = new();
         spawnPosition = battery.GetBatteryPositions()[0];
@@ -255,6 +254,9 @@ public class Player : MonoBehaviour
             targetPosition = script.GetNearestPosition(target.position);
             newPosition = script.GetFurtherPosition(target.position);
             found = true;
+
+            if (!(script as Battery)) break;
+            foundBattery = true;
             break;
         } 
         if (!found) targetPosition = startPosition + directionVector * currentDistance;

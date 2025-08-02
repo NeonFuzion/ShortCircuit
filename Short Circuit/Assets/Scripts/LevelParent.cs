@@ -74,7 +74,7 @@ public class LevelParent : MonoBehaviour
             CircuitComponent script = component.GetComponent<CircuitComponent>();
             script.DetachFromCircuit();
 
-            (script as LightBulb)?.ResetLightBulb();
+            (script as LightBulb)?.ResetComponent();
         }
     }
 }

@@ -15,7 +15,7 @@ public class Player : MonoBehaviour
     [SerializeField] AnimationCurve trajectoryCurve;
     [SerializeField] LevelManager levelManager;
     [SerializeField] UnityEvent onEndGame;
-    [SerializeField] UnityEvent<Transform> onSetTargetPosition;
+    [SerializeField] UnityEvent<Transform> onStartGame;
 
     float totalDistance, groundDirection, lastDirection, currentAngle, currentDistance, currentWiringTime;
     bool active, shrinking, starting;
@@ -192,7 +192,6 @@ public class Player : MonoBehaviour
     void DetectBattery()
     {
         onEndGame?.Invoke();
-        onSetTargetPosition?.Invoke(levelTarget);
         projectileVisual.eulerAngles = new();
         active = false;
         shrinking = false;
@@ -213,6 +212,7 @@ public class Player : MonoBehaviour
         bum.position = spawnPosition;
         inputMode = InputMode.Controlling;
         newPosition = Vector3.back;
+        onStartGame?.Invoke(levelTarget);
 
         WireHandle(-1);
         Reset();

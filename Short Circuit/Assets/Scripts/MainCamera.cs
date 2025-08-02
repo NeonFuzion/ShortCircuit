@@ -6,7 +6,6 @@ public class MainCamera : MonoBehaviour
 {
     [SerializeField] float dampening, sizeScaleSpeed, baseProjectionSize;
     [SerializeField] Vector3 offset;
-    [SerializeField] Transform player;
     [SerializeField] List<Transform> focusTargets;
 
     float targetProjectionSize, currentProjectionSize, sizeTime;

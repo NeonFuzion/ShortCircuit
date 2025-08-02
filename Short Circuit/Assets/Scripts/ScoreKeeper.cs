@@ -88,7 +88,6 @@ public class ScoreKeeper : MonoBehaviour
         }
         else
         {
-            Debug.Log(movement);
             tracker.position += movement;
         }
 

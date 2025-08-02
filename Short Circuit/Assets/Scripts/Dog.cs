@@ -35,6 +35,13 @@ public class Dog : MonoBehaviour
         }
     }
 
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (dogState != DogState.Wandering) return;
+        dogState = DogState.Idle;
+        StartCoroutine(IdleCoroutine());
+    }
+
     IEnumerator IdleCoroutine()
     {
         yield return new WaitForSeconds(Random.value * (idleMax - idleMin) + idleMin);

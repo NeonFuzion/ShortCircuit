@@ -44,6 +44,7 @@ public class Player : MonoBehaviour
     void Update()
     {
         if (!active) return;
+
         switch (inputMode)
         {
             case InputMode.Controlling:
@@ -57,6 +58,9 @@ public class Player : MonoBehaviour
                 projectileVisual.localScale = new(1, directionVector.x > 0 ? 1 : -1, 1);
 
                 aimRenderer.sprite = IsPluggable() ? aimableSprite : unAimableSprite;
+        
+                if (!shrinking) break;
+                EndGame();
                 break;
             case InputMode.Launching:
                 ArcMovement();
@@ -146,9 +150,6 @@ public class Player : MonoBehaviour
         DetectAfterLanding();
         Reset();
         ConnectBulbs();
-
-        if (!shrinking) return;
-        EndGame();
 
         if (!starting) return;
         starting = false;

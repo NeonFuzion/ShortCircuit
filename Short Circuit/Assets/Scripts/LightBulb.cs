@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class LightBulb : CircuitComponent
 {
-    [SerializeField] Sprite litSprite, unLitSprite;
+    [SerializeField] Sprite litSprite, unLitSprite, brokenSprite;
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -17,8 +17,18 @@ public class LightBulb : CircuitComponent
 
     }
 
+    public void ResetLightBulb()
+    {
+        spriteRenderer.sprite = unLitSprite;
+    }
+
     public void PowerBulb()
     {
         spriteRenderer.sprite = litSprite;
+    }
+
+    public void BreakBulb()
+    {
+        spriteRenderer.sprite = brokenSprite;
     }
 }

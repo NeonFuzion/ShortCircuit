@@ -49,8 +49,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   idleMin: 2
   idleMax: 5
-  wanderMin: 6
-  wanderMax: 3
+  wanderMin: 3
+  wanderMax: 6
   speed: 7
 --- !u!61 &1067957318468632984
 BoxCollider2D:

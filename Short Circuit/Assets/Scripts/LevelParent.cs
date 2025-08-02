@@ -73,6 +73,8 @@ public class LevelParent : MonoBehaviour
             Transform component = componentParent.GetChild(i);
             CircuitComponent script = component.GetComponent<CircuitComponent>();
             script.DetachFromCircuit();
+
+            (script as LightBulb)?.ResetLightBulb();
         }
     }
 }

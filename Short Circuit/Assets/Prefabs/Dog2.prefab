@@ -40,6 +40,10 @@ PrefabInstance:
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 4808641550557844523, guid: 14555b004088f0942908afb45ef2999f, type: 3}
+    - target: {fileID: 3679459586848826037, guid: 9a2a87a991cd72844ae2dfa5a671959e, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: b6042eaad58e69741b1a5aca77a57a7d, type: 2}
     - target: {fileID: 5538086980475612038, guid: 9a2a87a991cd72844ae2dfa5a671959e, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -54,7 +58,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8218774710434659279, guid: 9a2a87a991cd72844ae2dfa5a671959e, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1
+      value: 1.44
       objectReference: {fileID: 0}
     - target: {fileID: 8218774710434659279, guid: 9a2a87a991cd72844ae2dfa5a671959e, type: 3}
       propertyPath: m_LocalPosition.x
@@ -96,8 +100,39 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4890005373501102863, guid: 9a2a87a991cd72844ae2dfa5a671959e, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 163301678614112470, guid: 9a2a87a991cd72844ae2dfa5a671959e, type: 3}
+      insertIndex: 1
+      addedObject: {fileID: 2412892858679715210}
   m_SourcePrefab: {fileID: 100100000, guid: 9a2a87a991cd72844ae2dfa5a671959e, type: 3}
+--- !u!1 &3250379760716119216 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 163301678614112470, guid: 9a2a87a991cd72844ae2dfa5a671959e, type: 3}
+  m_PrefabInstance: {fileID: 3413589056731124838}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2412892858679715210
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3250379760716119216}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34c7aeb4a517c7643b971a8ea5e16400, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  idleMin: 2
+  idleMax: 4
+  wanderMin: 3
+  wanderMax: 6
+  speed: 5
+  runSpeedMultiplier: 1.5
+  playerDetectRadius: 3
+  onBreakCircuit:
+    m_PersistentCalls:
+      m_Calls: []

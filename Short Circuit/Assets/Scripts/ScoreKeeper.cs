@@ -121,11 +121,6 @@ public class ScoreKeeper : MonoBehaviour
         }
     }
 
-    void ResetLevel()
-    {
-        StartCoroutine(ResetCoroutine());
-    }
-
     void StartGame()
     {
         if (currentCircuitComponents.Count == allCircuitComponents.Count)
@@ -159,6 +154,11 @@ public class ScoreKeeper : MonoBehaviour
         }
         scoreParent.gameObject.SetActive(true);
         scoreMode = ScoreMode.Grading;
+    }
+
+    public void ResetLevel()
+    {
+        StartCoroutine(ResetCoroutine());
     }
 
     enum ScoreMode { None, Timing, Grading, Idling }

@@ -30,6 +30,8 @@ public class Player : MonoBehaviour
     LineRenderer wireRenderer, shadowRenderer;
     List<LightBulb> lightBulbs;
 
+    public bool Active { get => active; }
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -106,7 +108,7 @@ public class Player : MonoBehaviour
         WireHandle(2);
         transform.position = newPosition;
         newPosition = Vector3.back;
-        lightBulbs[lightBulbs.Count - 1].AttachToCircuit();
+        if (lightBulbs.Count > 0) lightBulbs[lightBulbs.Count - 1].AttachToCircuit();
         WireHandle(-1);
     }
 
@@ -213,6 +215,7 @@ public class Player : MonoBehaviour
         inputMode = InputMode.Controlling;
         newPosition = Vector3.back;
         onStartGame?.Invoke(levelTarget);
+        lastDirection = 0;
 
         WireHandle(-1);
         Reset();

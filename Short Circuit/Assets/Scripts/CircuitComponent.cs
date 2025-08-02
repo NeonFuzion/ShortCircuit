@@ -4,14 +4,17 @@ public class CircuitComponent : MonoBehaviour
 {
     [SerializeField] protected Transform positiveTarget, negativeTarget;
 
-    protected bool attached;
+    protected bool attached, isPassable;
 
     protected SpriteRenderer spriteRenderer;
+
+    public bool IsPassable { get => isPassable; }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     protected void Start()
     {
         attached = false;
+        isPassable = false;
 
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
@@ -19,19 +22,32 @@ public class CircuitComponent : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
-    void OnTriggerEnter2D(Collider2D collision)
+    void OnTriggerStay2D(Collider2D collision)
     {
         if (attached) return;
-        transform.localScale = Vector3.one * 1.2f;
+        Transform target = GetClosestTransform(collision.transform.position);
+        target.localScale = Vector3.one * 1.2f;
+
+        if (target == negativeTarget) target = positiveTarget;
+        else target = negativeTarget;
+        target.localScale = Vector3.one;
     }
 
     void OnTriggerExit2D(Collider2D collision)
     {
         if (attached) return;
-        transform.localScale = Vector3.one;
+        positiveTarget.localScale = Vector3.one;
+        negativeTarget.localScale = Vector3.one;
+    }
+
+    Transform GetClosestTransform(Vector2 position)
+    {
+        float positiveDistance = Vector2.Distance(positiveTarget.position, position);
+        float negativeDistance = Vector2.Distance(negativeTarget.position, position);
+        return positiveDistance > negativeDistance ? negativeTarget : positiveTarget;
     }
 
     public void AttachToCircuit()
@@ -46,11 +62,16 @@ public class CircuitComponent : MonoBehaviour
         transform.localScale = Vector3.one;
     }
 
-    public Vector2[] GetNearestPosition(Vector2 position)
+    public Vector2 GetNearestPosition(Vector2 position)
     {
-        float firstDistance = Vector2.Distance(positiveTarget.position, position);
-        float secondDistance = Vector2.Distance(negativeTarget.position, position);
-        return firstDistance > secondDistance ? new Vector2[2] { negativeTarget.position, positiveTarget.position } :
-            new Vector2[2] { positiveTarget.position, negativeTarget.position };
+        Transform output = GetClosestTransform(position);
+        if (output == negativeTarget) isPassable = true;
+        return output.position;
+    }
+
+    public Vector2 GetFurtherPosition(Vector2 position)
+    {
+        bool check = GetClosestTransform(position) == positiveTarget;
+        return check ? negativeTarget.position : positiveTarget.position;
     }
 }

@@ -17,6 +17,8 @@ public class LevelManager : MonoBehaviour
     {
         index = 0;
 
+        for (int i = 1; i < levelParents.Length; i++) levelParents[i].SetActive(false);
+
         InitializeLevel();
     }
 

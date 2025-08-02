@@ -4,12 +4,12 @@ using UnityEngine;
 
 public class MainCamera : MonoBehaviour
 {
-    [SerializeField] float dampening, sizeScaleSpeed;
+    [SerializeField] float dampening, sizeScaleSpeed, baseProjectionSize;
     [SerializeField] Vector3 offset;
     [SerializeField] Transform player;
     [SerializeField] List<Transform> focusTargets;
 
-    float baseProjectionSize, targetProjectionSize, currentProjectionSize, sizeTime;
+    float targetProjectionSize, currentProjectionSize, sizeTime;
 
     Vector3 velocity;
 
@@ -18,7 +18,7 @@ public class MainCamera : MonoBehaviour
     {
         velocity = Vector2.zero;
 
-        baseProjectionSize = Camera.main.orthographicSize;
+        if (baseProjectionSize == 0) baseProjectionSize = Camera.main.orthographicSize;
         currentProjectionSize = baseProjectionSize;
         targetProjectionSize = baseProjectionSize;
         sizeTime = 0;
@@ -44,15 +44,18 @@ public class MainCamera : MonoBehaviour
     {
         if (currentProjectionSize == targetProjectionSize) return;
         sizeTime += Time.deltaTime * sizeScaleSpeed;
+        //Debug.Log($"{Camera.main.orthographicSize}, {currentProjectionSize}, {targetProjectionSize}");
         Camera.main.orthographicSize = Mathf.Lerp(currentProjectionSize, targetProjectionSize, sizeTime);
 
         if (Mathf.Abs(targetProjectionSize - Camera.main.orthographicSize) > 0.1f) return;
         currentProjectionSize = targetProjectionSize;
+        Camera.main.orthographicSize = currentProjectionSize;
     }
 
     public void SetProjectionSize(float newSize)
     {
         targetProjectionSize = newSize;
+        currentProjectionSize = Camera.main.orthographicSize;
     }
 
     public void ResetProjectionSize()

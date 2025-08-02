@@ -2,26 +2,29 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Unity.VisualStudio.Editor;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 
 public class ScoreKeeper : MonoBehaviour
 {
-    [SerializeField] float countCooldown, trackerSpeed;
+    [SerializeField] float resetTime, trackerSpeed;
     [SerializeField] TextMeshProUGUI timerText;
     [SerializeField] LevelManager levelManager;
     [SerializeField] LineRenderer lineRenderer;
-    [SerializeField] Transform tracker;
+    [SerializeField] Transform tracker, scoreParent;
+    [SerializeField] GameObject prefabScoreIcon;
     [SerializeField] Player player;
     [SerializeField] UnityEvent<Transform> onTimeUp;
     [SerializeField] UnityEvent onStartLevel;
 
     float currentTime;
-    bool grading;
+    int scoreIndex;
 
     List<CircuitComponent> currentCircuitComponents, allCircuitComponents;
     List<Vector2> positions;
+    ScoreMode scoreMode;
 
     void Awake()
     {
@@ -38,13 +41,21 @@ public class ScoreKeeper : MonoBehaviour
     void Update()
     {
         RunTimer();
-
         MoveTracker();
+    }
+
+    IEnumerator ResetCoroutine()
+    {
+        scoreMode = ScoreMode.Idling;
+        yield return new WaitForSeconds(resetTime);
+        lineRenderer.positionCount = 1;
+        StartGame();
     }
 
     void StartLevel()
     {
-        grading = false;
+        scoreParent.gameObject.SetActive(false);
+        scoreMode = ScoreMode.Timing;
         currentTime = levelManager.CurrentLevel.Time;
         allCircuitComponents = levelManager.CurrentCircuitComponents;
         currentCircuitComponents = new();
@@ -55,7 +66,7 @@ public class ScoreKeeper : MonoBehaviour
 
     void RunTimer()
     {
-        if (grading) return;
+        if (scoreMode != ScoreMode.Timing) return;
         if (timerText.text.Equals("Time's Up!")) return;
         timerText.SetText((Mathf.Round(currentTime * 1000) / 1000).ToString());
         currentTime -= Time.deltaTime;
@@ -68,7 +79,7 @@ public class ScoreKeeper : MonoBehaviour
 
     void MoveTracker()
     {
-        if (!grading) return;
+        if (scoreMode != ScoreMode.Grading) return;
         int index = positions.Count - 1;
         Vector3 target = positions[index];
         Vector3 direction = target - tracker.position;
@@ -82,9 +93,7 @@ public class ScoreKeeper : MonoBehaviour
             lineRenderer.SetPosition(index, tracker.position);
 
             if (positions.Count > 0) return;
-            grading = false;
-            lineRenderer.positionCount = 1;
-            StartGame();
+            ResetLevel();
         }
         else
         {
@@ -98,8 +107,23 @@ public class ScoreKeeper : MonoBehaviour
 
         if (!allCircuitComponents.Contains(script)) return;
         if (currentCircuitComponents.Contains(script)) return;
-        (script as LightBulb).PowerBulb();
-        currentCircuitComponents.Add(script);
+        if (script.IsPassable)
+        {
+            (script as LightBulb).PowerBulb();
+            currentCircuitComponents.Add(script);
+            Transform scoreIcon = scoreParent.GetChild(scoreIndex++);
+            scoreIcon.GetChild(0).gameObject.SetActive(false);
+            scoreIcon.GetChild(1).gameObject.SetActive(true);
+        }
+        else
+        {
+            ResetLevel();
+        }
+    }
+
+    void ResetLevel()
+    {
+        StartCoroutine(ResetCoroutine());
     }
 
     void StartGame()
@@ -116,13 +140,26 @@ public class ScoreKeeper : MonoBehaviour
         StartLevel();
     }
 
-    public void GradeLevel(List<CircuitComponent> components)
+    public void GradeLevel()
     {
-        grading = true;
         positions = levelManager.CurrentLevel.GetWirePoints();
         positions.Reverse();
         tracker.position = positions[0];
         positions.RemoveAt(positions.Count - 1);
         lineRenderer.SetPosition(0, tracker.position);
+        scoreIndex = 0;
+
+        foreach (Transform icon in scoreParent)
+        {
+            Destroy(icon.gameObject);
+        }
+        foreach (CircuitComponent component in allCircuitComponents)
+        {
+            Instantiate(prefabScoreIcon, scoreParent);
+        }
+        scoreParent.gameObject.SetActive(true);
+        scoreMode = ScoreMode.Grading;
     }
+
+    enum ScoreMode { None, Timing, Grading, Idling }
 }

@@ -14,7 +14,7 @@ public class Player : MonoBehaviour
     [SerializeField] Sprite aimableSprite, unAimableSprite;
     [SerializeField] AnimationCurve trajectoryCurve;
     [SerializeField] LevelManager levelManager;
-    [SerializeField] UnityEvent<List<CircuitComponent>> onEndGame;
+    [SerializeField] UnityEvent onEndGame;
     [SerializeField] UnityEvent<Transform> onSetTargetPosition;
 
     float totalDistance, groundDirection, lastDirection, currentAngle, currentDistance, currentWiringTime;
@@ -71,19 +71,6 @@ public class Player : MonoBehaviour
 
     bool IsPluggable() => !Physics2D.OverlapCircle(target.position, 0.1f, LayerMask.GetMask("Unpluggable"));
 
-    Vector2[] DetectComponentAtTarget()
-    {
-        foreach (Collider2D collider in Physics2D.OverlapCircleAll(target.position, 0.6f))
-        {
-            CircuitComponent script = collider.GetComponent<CircuitComponent>();
-
-            if (lightBulbs.Contains(script)) continue;
-            if (!script) continue;
-            return script.GetNearestPosition(target.position);
-        }
-        return new Vector2[0];
-    }
-
     void Reset()
     {
         lastDirection = Mathf.Atan2(directionVector.y, directionVector.x) * 180 / Mathf.PI;
@@ -107,7 +94,7 @@ public class Player : MonoBehaviour
             {
                 if (lightBulbs.Contains(script)) continue;
                 if (script as LightBulb) lightBulbs.Add(script as LightBulb);
-                else if (script as Battery && max != 0 && max == lightBulbs.Count) DetectBattery();
+                else if ((script as Battery && max != 0 && max == lightBulbs.Count) || shrinking) DetectBattery();
             }
         }
     }
@@ -204,10 +191,11 @@ public class Player : MonoBehaviour
 
     void DetectBattery()
     {
-        onEndGame?.Invoke(lightBulbs.Select(x => x as CircuitComponent).ToList());
+        onEndGame?.Invoke();
         onSetTargetPosition?.Invoke(levelTarget);
         projectileVisual.eulerAngles = new();
         active = false;
+        shrinking = false;
     }
 
     public void SetShrink()
@@ -254,16 +242,19 @@ public class Player : MonoBehaviour
         currentAngle = 0;
 
         startPosition = transform.position;
-        Vector2[] bulbPositions = DetectComponentAtTarget();
-        if (bulbPositions.Length > 0)
+        bool found = false;
+        foreach (Collider2D collider in Physics2D.OverlapCircleAll(target.position, 0.6f))
         {
-            targetPosition = bulbPositions[0];
-            newPosition = bulbPositions[1];
-        }
-        else
-        {
-            targetPosition = startPosition + directionVector * currentDistance;
-        }
+            CircuitComponent script = collider.GetComponent<CircuitComponent>();
+
+            if (lightBulbs.Contains(script)) continue;
+            if (!script) continue;
+            targetPosition = script.GetNearestPosition(target.position);
+            newPosition = script.GetFurtherPosition(target.position);
+            found = true;
+            break;
+        } 
+        if (!found) targetPosition = startPosition + directionVector * currentDistance;
 
         WireHandle(0);
         inputMode = InputMode.Launching;

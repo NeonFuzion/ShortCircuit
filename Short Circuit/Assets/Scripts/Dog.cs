@@ -6,14 +6,24 @@ public class Dog : MonoBehaviour
     [SerializeField] float idleMin, idleMax, wanderMin, wanderMax, speed;
 
     DogState dogState;
-
     Vector2 startPosition, endPosition, wanderVector;
+    Animator animator;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        dogState = DogState.Idle;
-        StartCoroutine(IdleCoroutine());
+        animator = GetComponent<Animator>();
+
+        if (Random.value > 0.5f)
+        {
+            dogState = DogState.Idle;
+            StartCoroutine(IdleCoroutine());
+        }
+        else
+        {
+            dogState = DogState.Wandering;
+            SetWanderDirection();
+        }
     }
 
     // Update is called once per frame
@@ -35,15 +45,9 @@ public class Dog : MonoBehaviour
         }
     }
 
-    void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (dogState != DogState.Wandering) return;
-        dogState = DogState.Idle;
-        StartCoroutine(IdleCoroutine());
-    }
-
     IEnumerator IdleCoroutine()
     {
+        animator.CrossFade("Idle", 0, 0);
         yield return new WaitForSeconds(Random.value * (idleMax - idleMin) + idleMin);
         SetWanderDirection();
         dogState = DogState.Wandering;
@@ -53,9 +57,22 @@ public class Dog : MonoBehaviour
     {
         float angle = Random.value * 2 * Mathf.PI;
         float distance = Random.Range(wanderMin, wanderMax);
-        wanderVector = new(Mathf.Cos(angle), Mathf.Sin(angle));
+
+        while (true)
+        {
+            wanderVector = new(Mathf.Cos(angle), Mathf.Sin(angle));
+            RaycastHit2D hit = Physics2D.Raycast(transform.position, wanderVector, distance, LayerMask.GetMask("Unpluggable"));
+
+            if (!hit) break;
+            distance = Mathf.Clamp(Vector2.Distance(transform.position, hit.point) - 1, 0, wanderMax);
+
+            if (distance > 1) break;
+        }
+
         startPosition = transform.position;
         endPosition = startPosition + wanderVector * distance;
+        transform.localScale = new(wanderVector.x > 0 ? 1 : -1, transform.localScale.y, transform.localScale.z);
+        animator.CrossFade("Walk", 0, 0);
     }
     
     public enum DogState { None, Idle, Wandering }

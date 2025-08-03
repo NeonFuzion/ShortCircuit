@@ -129,13 +129,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 34c7aeb4a517c7643b971a8ea5e16400, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  idleMin: 1
-  idleMax: 2.5
+  idleMin: 2
+  idleMax: 3
   wanderMin: 5
   wanderMax: 7
   speed: 7
   runSpeedMultiplier: 1.2
-  playerDetectRadius: 5
+  playerDetectRadius: 3
   nibbleCooldown: 2
   onBreakCircuit:
     m_PersistentCalls:
@@ -145,11 +145,11 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 5457667733260953774}
         m_TargetAssemblyTypeName: UnityEngine.AudioSource, UnityEngine
-        m_MethodName: PlayOneShot
-        m_Mode: 2
+        m_MethodName: Play
+        m_Mode: 1
         m_Arguments:
-          m_ObjectArgument: {fileID: 8300000, guid: 293804c8535eadc4db77ffd659b261d8, type: 3}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.AudioClip, UnityEngine
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -165,9 +165,9 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
+  m_audioClip: {fileID: 8300000, guid: 293804c8535eadc4db77ffd659b261d8, type: 3}
+  m_Resource: {fileID: 8300000, guid: 293804c8535eadc4db77ffd659b261d8, type: 3}
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0

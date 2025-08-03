@@ -59,7 +59,7 @@ public class LevelManager : MonoBehaviour
         else
         {
             index++;
-            if (index > 1) levelParents[index - 2].SetActive(false);
+            if (index > 0) levelParents[index - 1].SetActive(false);
             levelParents[index].SetActive(true);
             InitializeLevel();
             return true;

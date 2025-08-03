@@ -179,7 +179,7 @@ MonoBehaviour:
   m_text: Mub the Log
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 344409e8a3148754eb53325eb5c85628, type: 2}
-  m_sharedMaterial: {fileID: -4404585100521227338, guid: 344409e8a3148754eb53325eb5c85628, type: 2}
+  m_sharedMaterial: {fileID: -1569286291183718526, guid: 344409e8a3148754eb53325eb5c85628, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -452,7 +452,7 @@ MonoBehaviour:
   m_text: Start
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 344409e8a3148754eb53325eb5c85628, type: 2}
-  m_sharedMaterial: {fileID: -4404585100521227338, guid: 344409e8a3148754eb53325eb5c85628, type: 2}
+  m_sharedMaterial: {fileID: -1569286291183718526, guid: 344409e8a3148754eb53325eb5c85628, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

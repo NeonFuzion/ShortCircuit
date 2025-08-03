@@ -40,7 +40,7 @@ public class Player : MonoBehaviour
         shrinking = false;
         starting = true;
 
-        aimRenderer = target.GetComponent<SpriteRenderer>();
+        aimRenderer = target.GetChild(0).GetComponent<SpriteRenderer>();
         animator = GetComponent<Animator>();
 
         StartLevel();

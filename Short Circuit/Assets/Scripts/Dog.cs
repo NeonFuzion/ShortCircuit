@@ -61,7 +61,7 @@ public class Dog : MonoBehaviour
         while (true)
         {
             wanderVector = new(Mathf.Cos(angle), Mathf.Sin(angle));
-            RaycastHit2D hit = Physics2D.Raycast(transform.position, wanderVector, distance, LayerMask.GetMask("Unpluggable"));
+            RaycastHit2D hit = Physics2D.Raycast(transform.position, wanderVector, distance, LayerMask.GetMask("Unpluggable") + LayerMask.GetMask("Danger"));
 
             if (!hit) break;
             distance = Mathf.Clamp(Vector2.Distance(transform.position, hit.point) - 1, 0, wanderMax);

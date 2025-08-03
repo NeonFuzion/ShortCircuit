@@ -18,7 +18,7 @@ public class ScoreKeeper : MonoBehaviour
     [SerializeField] Player player;
     [SerializeField] Image resetScreen;
     [SerializeField] UnityEvent<Transform> onTimeUp;
-    [SerializeField] UnityEvent onStartLevel, onFinishGame;
+    [SerializeField] UnityEvent onStartLevel, onFinishGame, onSuccessfulLevel, onFailLevel;
 
     float currentTime;
     int scoreIndex;
@@ -49,7 +49,7 @@ public class ScoreKeeper : MonoBehaviour
     IEnumerator ResetCoroutine()
     {
         scoreMode = ScoreMode.Idling;
-        lineRenderer.positionCount = 1;
+        lineRenderer.positionCount = 0;
         animator.CrossFade("FadeIn", 0, 0);
         yield return new WaitForSeconds(resetTime);
         animator.CrossFade("FadeOut", 0, 0);
@@ -143,6 +143,7 @@ public class ScoreKeeper : MonoBehaviour
         if (currentCircuitComponents.Count == allCircuitComponents.Count)
         {
             bool isFinalLevel = levelManager.IncrementLevel();
+            onSuccessfulLevel?.Invoke();
             if (!isFinalLevel)
             {
                 onFinishGame?.Invoke();
@@ -153,21 +154,20 @@ public class ScoreKeeper : MonoBehaviour
         {
             levelManager.CurrentLevel.ClearLevel();
             currentCircuitComponents.Clear();
+            onFailLevel?.Invoke();
         }
         StartLevel();
     }
 
     void ResumeIdleAnim()
     {
-        Debug.Log("Clear");
-        resetScreen.color = new(1, 1, 1, 0);
+        resetScreen.color = new(0, 0, 0, 0);
         animator.CrossFade("Idle", 0, 0);
     }
 
     void IdleDark()
     {
-        Debug.Log("Black");
-        resetScreen.color = new(1, 1, 1, 1);
+        resetScreen.color = new(0, 0, 0, 1);
         animator.CrossFade("Idle", 0, 0);
     }
 
@@ -191,6 +191,11 @@ public class ScoreKeeper : MonoBehaviour
         }
         scoreParent.gameObject.SetActive(true);
         scoreMode = ScoreMode.Grading;
+    }
+
+    public void ClearLevel()
+    {
+        lineRenderer.positionCount = 0;
     }
 
     public void ResetLevel()

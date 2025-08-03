@@ -6,12 +6,14 @@ using UnityEngine.Events;
 
 public class NibbleDog : MonoBehaviour
 {
-    [SerializeField] float idleMin, idleMax, wanderMin, wanderMax, speed, runSpeedMultiplier, playerDetectRadius;
-    [SerializeField] UnityEvent onBreakCircuit;
+    [SerializeField] float idleMin, idleMax, wanderMin, wanderMax, speed, runSpeedMultiplier, playerDetectRadius, nibbleCooldown;
+    [SerializeField] UnityEvent onBreakCircuit, onDetectPlayer;
 
     DogState dogState;
     Vector2 startPosition, endPosition, wanderVector;
     Animator animator;
+
+    bool onCooldown;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -63,6 +65,13 @@ public class NibbleDog : MonoBehaviour
         dogState = DogState.Wandering;
     }
 
+    IEnumerator CooldownCoroutine()
+    {
+        onCooldown = true;
+        yield return new WaitForSeconds(nibbleCooldown);
+        onCooldown = false;
+    }
+
     void SetWanderDirection()
     {
         float angle = Random.value * 2 * Mathf.PI;
@@ -87,6 +96,8 @@ public class NibbleDog : MonoBehaviour
 
     void DetectPlayer()
     {
+        if (onCooldown) return;
+        onDetectPlayer?.Invoke();
         bool found = false;
         foreach (Collider2D collision in Physics2D.OverlapCircleAll(transform.position, playerDetectRadius))
         {
@@ -112,26 +123,29 @@ public class NibbleDog : MonoBehaviour
 
         if (!target) return;
         wanderVector = (target.position - transform.position).normalized;
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, wanderVector, shortestDistance, LayerMask.GetMask("Danger"));
+
+        if (hit) return;
         startPosition = transform.position;
         endPosition = target.position;
         dogState = DogState.Running;
+        StopAllCoroutines();
     }
 
     void Bite()
     {
-        onBreakCircuit?.Invoke();
-
-        Collider2D collider = Physics2D.OverlapCircle(transform.position, 0.2f, LayerMask.GetMask("LightBulb"));
+        Collider2D collider = Physics2D.OverlapCircle(transform.position, 0.5f, LayerMask.GetMask("LightBulb"));
 
         if (!collider) return;
         LightBulb lightBulb = collider.GetComponent<LightBulb>();
-
-        if (!lightBulb) return;
         lightBulb.BreakBulb();
+        onBreakCircuit?.Invoke();
+        StartCoroutine(CooldownCoroutine());
     }
 
     void StartDogging()
     {
+        onCooldown = false;
         if (Random.value > 0.5f)
         {
             dogState = DogState.Idle;

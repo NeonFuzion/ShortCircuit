@@ -14,7 +14,7 @@ public class Player : MonoBehaviour
     [SerializeField] Sprite aimableSprite, unAimableSprite;
     [SerializeField] AnimationCurve trajectoryCurve;
     [SerializeField] LevelManager levelManager;
-    [SerializeField] UnityEvent onEndGame, onResetToWire;
+    [SerializeField] UnityEvent onEndGame, onResetToWire, onLaunch;
     [SerializeField] UnityEvent<Transform> onStartGame;
 
     float totalDistance, groundDirection, lastDirection, currentAngle, currentDistance, currentWiringTime;
@@ -286,6 +286,7 @@ public class Player : MonoBehaviour
         if (!found) targetPosition = startPosition + directionVector * currentDistance;
 
         WireHandle(0);
+        onLaunch?.Invoke();
         inputMode = InputMode.Launching;
     }
 

@@ -126,13 +126,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 34c7aeb4a517c7643b971a8ea5e16400, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  idleMin: 2
-  idleMax: 4
-  wanderMin: 3
-  wanderMax: 6
-  speed: 5
+  idleMin: 1
+  idleMax: 2.5
+  wanderMin: 5
+  wanderMax: 7
+  speed: 7
   runSpeedMultiplier: 1.2
-  playerDetectRadius: 3
+  playerDetectRadius: 5
   onBreakCircuit:
     m_PersistentCalls:
       m_Calls: []

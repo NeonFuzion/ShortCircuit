@@ -1,10 +1,16 @@
 fileFormatVersion: 2
-guid: 5cd69198cd35ae843be4343139b6588a
+guid: bed811ccc7cb14048bd8cb6b47df68a8
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -1200284075615530455
-    second: AimSprites_0
+      213: -8614833858398638727
+    second: ResizedNewSignIcons_0
+  - first:
+      213: 2323937406254516357
+    second: ResizedNewSignIcons_1
+  - first:
+      213: 601101775652230483
+    second: ResizedNewSignIcons_2
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -51,7 +57,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 4
+  spritePixelsToUnits: 16
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -113,13 +119,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: AimSprites_0
+      name: ResizedNewSignIcons_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 8
-        height: 8
+        x: 2
+        y: 2
+        width: 12
+        height: 12
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,30 +134,52 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 922d06b1efbb75fe0800000000000000
-      internalID: -1200284075615530455
+      spriteID: 97d2427cf36f17880800000000000000
+      internalID: -8614833858398638727
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: AimSprites_1
+      name: ResizedNewSignIcons_1
       rect:
         serializedVersion: 2
-        x: 8
-        y: 0
-        width: 8
-        height: 8
+        x: 18
+        y: 2
+        width: 12
+        height: 12
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: 1c238d97c7a80844484bc9471f000c3f
-      internalID: -1752531628
+      spriteID: 5880b0c12c8404020800000000000000
+      internalID: 2323937406254516357
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ResizedNewSignIcons_2
+      rect:
+        serializedVersion: 2
+        x: 34
+        y: 2
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3559b9351ea875800800000000000000
+      internalID: 601101775652230483
       vertices: []
       indices: 
       edges: []
@@ -160,7 +188,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: d939fc4a59a2c284eb559d4cf534fb33
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -168,12 +196,11 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries:
-      - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":2.0,"y":1.0},"gridSpriteSize":{"x":8.0,"y":8.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
+      entries: []
     nameFileIdTable:
-      AimSprites_0: -1200284075615530455
-      AimSprites_1: -1752531628
+      ResizedNewSignIcons_0: -8614833858398638727
+      ResizedNewSignIcons_1: 2323937406254516357
+      ResizedNewSignIcons_2: 601101775652230483
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

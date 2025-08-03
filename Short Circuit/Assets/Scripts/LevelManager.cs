@@ -50,10 +50,27 @@ public class LevelManager : MonoBehaviour
         currentCircuitComponents = currentLevel.CircuitComponents;
     }
 
-    public void IncrementLevel()
+    public bool IncrementLevel()
     {
-        levelParents[index++].SetActive(false);
-        levelParents[index].SetActive(true);
-        InitializeLevel();
+        if (index == levelParents.Length - 1)
+        {
+            return false;
+        }
+        else
+        {
+            index++;
+            if (index > 1) levelParents[index - 2].SetActive(false);
+            levelParents[index].SetActive(true);
+            InitializeLevel();
+            return true;
+        }
+    }
+
+    public void ShowAllLevels()
+    {
+        foreach (Transform level in levels)
+        {
+            level.gameObject.SetActive(true);
+        }
     }
 }

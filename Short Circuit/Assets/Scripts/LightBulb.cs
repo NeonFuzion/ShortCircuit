@@ -4,7 +4,6 @@ public class LightBulb : CircuitComponent
 {
     [SerializeField] Sprite litSprite, unLitSprite, brokenSprite;
 
-
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -25,6 +24,8 @@ public class LightBulb : CircuitComponent
 
     public void PowerBulb()
     {
+        animator.CrossFade("Power", 0, 0);
+        onPowered?.Invoke();
         spriteRenderer.sprite = litSprite;
     }
 

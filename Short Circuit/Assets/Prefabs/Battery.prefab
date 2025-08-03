@@ -76,7 +76,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 1
-  m_Sprite: {fileID: -5971955723123689425, guid: 0adc6d76c5adc604db083e518f0f11c2, type: 3}
+  m_Sprite: {fileID: -8614833858398638727, guid: bed811ccc7cb14048bd8cb6b47df68a8, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -100,6 +100,7 @@ GameObject:
   - component: {fileID: 6001363483884279000}
   - component: {fileID: 6672812394274003200}
   - component: {fileID: 2834934097007046444}
+  - component: {fileID: 1443220110682252429}
   m_Layer: 0
   m_Name: Battery
   m_TagString: Untagged
@@ -138,6 +139,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   positiveTarget: {fileID: 6875081798969031105}
   negativeTarget: {fileID: 1406771569432031117}
+  unpolarizedSprite: {fileID: 601101775652230483, guid: bed811ccc7cb14048bd8cb6b47df68a8, type: 3}
   isPolarized: 1
   rightSideRespawn: 1
 --- !u!212 &6001363483884279000
@@ -268,6 +270,28 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 3.5, y: 2.5}
   m_EdgeRadius: 0
+--- !u!95 &1443220110682252429
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4192741137329930275}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: d928e859a773394448d35082d73b0863, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &8942926802953004497
 GameObject:
   m_ObjectHideFlags: 0
@@ -344,7 +368,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 1
-  m_Sprite: {fileID: 20690075, guid: 0adc6d76c5adc604db083e518f0f11c2, type: 3}
+  m_Sprite: {fileID: 2323937406254516357, guid: bed811ccc7cb14048bd8cb6b47df68a8, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

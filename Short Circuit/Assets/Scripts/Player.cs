@@ -14,19 +14,21 @@ public class Player : MonoBehaviour
     [SerializeField] Sprite aimableSprite, unAimableSprite;
     [SerializeField] AnimationCurve trajectoryCurve;
     [SerializeField] LevelManager levelManager;
-    [SerializeField] UnityEvent onEndGame;
+    [SerializeField] UnityEvent onEndGame, onResetToWire;
     [SerializeField] UnityEvent<Transform> onStartGame;
 
     float totalDistance, groundDirection, lastDirection, currentAngle, currentDistance, currentWiringTime;
     bool active, shrinking, starting, foundBattery;
-    int max;
+    int max, lastWireIndex;
 
     Vector2 startPosition, targetPosition, directionVector, input, spawnPosition;
     Vector3 newPosition;
     Transform levelTarget;
     Battery battery;
+    Sprite oldCursor;
     InputMode inputMode;
     SpriteRenderer aimRenderer;
+    Animator animator;
     LineRenderer wireRenderer, shadowRenderer;
     List<LightBulb> lightBulbs;
 
@@ -39,6 +41,8 @@ public class Player : MonoBehaviour
         starting = true;
 
         aimRenderer = target.GetComponent<SpriteRenderer>();
+        animator = GetComponent<Animator>();
+
         StartLevel();
     }
 
@@ -59,7 +63,11 @@ public class Player : MonoBehaviour
                 projectileVisual.eulerAngles = new(0, 0, currentAngle + lastDirection);
                 projectileVisual.localScale = new(1, directionVector.x > 0 ? 1 : -1, 1);
 
-                aimRenderer.sprite = IsPluggable() ? aimableSprite : unAimableSprite;
+                oldCursor = aimRenderer.sprite;
+                bool isPluggable = IsPluggable();
+                aimRenderer.sprite = isPluggable ? aimableSprite : unAimableSprite;
+
+                if (aimRenderer.sprite != oldCursor) animator.CrossFade(isPluggable ? "Selectable" : "NonSelectable", 0, 0);
         
                 if (!shrinking) break;
                 EndGame();
@@ -88,6 +96,10 @@ public class Player : MonoBehaviour
         {
             if (LayerMask.LayerToName(collider.gameObject.layer).Equals("Danger"))
             {
+                onResetToWire?.Invoke();
+                if (shadowRenderer.positionCount >= 2) shadowRenderer.positionCount -= 2;
+                else shadowRenderer.positionCount = 0;
+                wireRenderer.positionCount = lastWireIndex;
                 transform.position = startPosition;
             }
 
@@ -135,6 +147,7 @@ public class Player : MonoBehaviour
 
         if (distanceProgress < 1) return;
         DetectAfterLanding();
+        if (wireRenderer) lastWireIndex = wireRenderer.positionCount - 1;
         Reset();
         ConnectBulbs();
 
@@ -151,6 +164,7 @@ public class Player : MonoBehaviour
         {
             case -1:
                 LevelParent level = levelManager.CurrentLevel;
+                lastWireIndex = 0;
                 level.CreateWire();
                 wireRenderer = level.WireRenderer;
                 shadowRenderer = level.ShadowRenderer;
@@ -214,7 +228,15 @@ public class Player : MonoBehaviour
         inputMode = InputMode.Controlling;
         newPosition = Vector3.back;
         onStartGame?.Invoke(levelTarget);
+
+        currentAngle = 0;
         lastDirection = 0;
+        directionVector = new();
+        target.localPosition = new();
+        spinner.eulerAngles = new();
+        directionVector = new();
+        targetPosition = transform.position;
+        startPosition = transform.position;
 
         WireHandle(-1);
         Reset();
@@ -256,6 +278,8 @@ public class Player : MonoBehaviour
             found = true;
 
             if (!(script as Battery)) break;
+            if (Vector2.Distance(targetPosition, spawnPosition) < 0.01f)
+                targetPosition = newPosition;
             foundBattery = true;
             break;
         } 

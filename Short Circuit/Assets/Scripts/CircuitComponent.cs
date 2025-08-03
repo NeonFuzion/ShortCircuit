@@ -1,14 +1,17 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 public class CircuitComponent : MonoBehaviour
 {
+    [SerializeField] protected bool isPolarized;
     [SerializeField] protected Transform positiveTarget, negativeTarget;
     [SerializeField] protected Sprite unpolarizedSprite;
-    [SerializeField] protected bool isPolarized;
+    [SerializeField] protected UnityEvent onAttached, onPowered;
 
     protected bool attached, isPassable;
 
     protected SpriteRenderer spriteRenderer;
+    protected Animator animator;
 
     public bool IsPassable { get => isPassable; }
 
@@ -16,8 +19,13 @@ public class CircuitComponent : MonoBehaviour
     protected void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        animator = GetComponent<Animator>();
 
         ResetComponent();
+
+        if (isPolarized) return;
+        positiveTarget.GetComponent<SpriteRenderer>().sprite = unpolarizedSprite;
+        negativeTarget.GetComponent<SpriteRenderer>().sprite = unpolarizedSprite;
     }
 
     // Update is called once per frame
@@ -30,7 +38,7 @@ public class CircuitComponent : MonoBehaviour
     {
         if (attached) return;
         Transform target = GetClosestTransform(collision.transform.position);
-        target.localScale = Vector3.one * 1.2f;
+        target.localScale = Vector3.one * 1.5f;
 
         if (target == negativeTarget) target = positiveTarget;
         else target = negativeTarget;
@@ -44,6 +52,11 @@ public class CircuitComponent : MonoBehaviour
         negativeTarget.localScale = Vector3.one;
     }
 
+    void ResumeIdle()
+    {
+        animator.CrossFade("Idle", 0, 0);
+    }
+
     Transform GetClosestTransform(Vector2 position)
     {
         float positiveDistance = Vector2.Distance(positiveTarget.position, position);
@@ -55,16 +68,17 @@ public class CircuitComponent : MonoBehaviour
     {
         attached = false;
         isPassable = !isPolarized;
-
-        if (isPolarized) return;
-        positiveTarget.GetComponent<SpriteRenderer>().sprite = unpolarizedSprite;
-        negativeTarget.GetComponent<SpriteRenderer>().sprite = unpolarizedSprite;
     }
 
     public void AttachToCircuit()
     {
         attached = true;
         transform.localScale = Vector3.one * 1.2f;
+        negativeTarget.localScale = Vector3.one;
+        positiveTarget.localScale = Vector3.one;
+
+        animator.CrossFade("Attach", 0, 0);
+        onAttached?.Invoke();
     }
 
     public void DetachFromCircuit()

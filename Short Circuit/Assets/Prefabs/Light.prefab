@@ -187,6 +187,7 @@ GameObject:
   - component: {fileID: 5390603168174133681}
   - component: {fileID: 1914819302777099097}
   - component: {fileID: 1099035348944471635}
+  - component: {fileID: 723814727884297257}
   m_Layer: 6
   m_Name: Light
   m_TagString: Untagged
@@ -225,10 +226,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   positiveTarget: {fileID: 5811704816573084768}
   negativeTarget: {fileID: 7161977639982970295}
+  unpolarizedSprite: {fileID: 601101775652230483, guid: bed811ccc7cb14048bd8cb6b47df68a8, type: 3}
   isPolarized: 1
-  litSprite: {fileID: -4021652510367811384, guid: f7692e2ad8e36d34a9bcf48fdcfba9f2, type: 3}
-  unLitSprite: {fileID: 4163335551310552942, guid: f7692e2ad8e36d34a9bcf48fdcfba9f2, type: 3}
-  brokenSprite: {fileID: 0}
+  litSprite: {fileID: 1720249466806268402, guid: 0b74c7a694bda414a99ea79150a97bc4, type: 3}
+  unLitSprite: {fileID: 1420370981237750608, guid: 0b74c7a694bda414a99ea79150a97bc4, type: 3}
+  brokenSprite: {fileID: -4605124483036461266, guid: 0b74c7a694bda414a99ea79150a97bc4, type: 3}
 --- !u!212 &5390603168174133681
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -273,7 +275,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_Sprite: {fileID: 4163335551310552942, guid: f7692e2ad8e36d34a9bcf48fdcfba9f2, type: 3}
+  m_Sprite: {fileID: 1420370981237750608, guid: 0b74c7a694bda414a99ea79150a97bc4, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -345,15 +347,37 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: -0.4}
+  m_Offset: {x: 0, y: -0.68}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 1.75, y: 2}
+    oldSize: {x: 2, y: 2}
     newSize: {x: 1, y: 2}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1.5, y: 1}
+  m_Size: {x: 2, y: 0.75}
   m_EdgeRadius: 0
+--- !u!95 &723814727884297257
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8801692962019942828}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: d928e859a773394448d35082d73b0863, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

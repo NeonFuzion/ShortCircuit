@@ -17,7 +17,7 @@ public class ScoreKeeper : MonoBehaviour
     [SerializeField] GameObject prefabScoreIcon;
     [SerializeField] Player player;
     [SerializeField] UnityEvent<Transform> onTimeUp;
-    [SerializeField] UnityEvent onStartLevel;
+    [SerializeField] UnityEvent onStartLevel, onFinishGame;
 
     float currentTime;
     int scoreIndex;
@@ -25,9 +25,12 @@ public class ScoreKeeper : MonoBehaviour
     List<CircuitComponent> currentCircuitComponents, allCircuitComponents;
     List<Vector2> positions;
     ScoreMode scoreMode;
+    Animator animator;
 
     void Awake()
     {
+        animator = GetComponent<Animator>();
+
         StartLevel();
     }
 
@@ -47,8 +50,24 @@ public class ScoreKeeper : MonoBehaviour
     IEnumerator ResetCoroutine()
     {
         scoreMode = ScoreMode.Idling;
-        yield return new WaitForSeconds(resetTime);
         lineRenderer.positionCount = 1;
+        animator.CrossFade("FadeIn", 0, 0);
+        yield return new WaitForSeconds(resetTime);
+        animator.CrossFade("FadeOut", 0, 0);
+        StartGame();
+    }
+
+    IEnumerator ResetToWireCoroutine()
+    {
+        animator.CrossFade("FadeIn", 0, 0);
+        yield return new WaitForSeconds(resetTime);
+        animator.CrossFade("FadeOut", 0, 0);
+    }
+
+    IEnumerator ChangeLevelCoroutine()
+    {
+        scoreMode = ScoreMode.Idling;
+        yield return new WaitForSeconds(resetTime);
         StartGame();
     }
 
@@ -67,8 +86,7 @@ public class ScoreKeeper : MonoBehaviour
     void RunTimer()
     {
         if (scoreMode != ScoreMode.Timing) return;
-        if (timerText.text.Equals("Time's Up!")) return;
-        timerText.SetText((Mathf.Round(currentTime * 1000) / 1000).ToString());
+        timerText.SetText((Mathf.Round(currentTime * 100) / 100).ToString());
         currentTime -= Time.deltaTime;
 
         if (currentTime > 0) return;
@@ -117,7 +135,7 @@ public class ScoreKeeper : MonoBehaviour
         }
         else
         {
-            ResetLevel();
+            ResetAndClearLevel();
         }
     }
 
@@ -125,7 +143,12 @@ public class ScoreKeeper : MonoBehaviour
     {
         if (currentCircuitComponents.Count == allCircuitComponents.Count)
         {
-            levelManager.IncrementLevel();
+            bool isFinalLevel = levelManager.IncrementLevel();
+            if (!isFinalLevel)
+            {
+                onFinishGame?.Invoke();
+                return;
+            }
         }
         else
         {
@@ -135,12 +158,23 @@ public class ScoreKeeper : MonoBehaviour
         StartLevel();
     }
 
+    void ResumeIdleAnim()
+    {
+        animator.CrossFade("Idle", 0, 0);
+    }
+
+    void IdleDark()
+    {
+        animator.CrossFade("FadeDark", 0, 0);
+    }
+
     public void GradeLevel()
     {
         positions = levelManager.CurrentLevel.GetWirePoints();
         positions.Reverse();
         tracker.position = positions[0];
         positions.RemoveAt(positions.Count - 1);
+        lineRenderer.positionCount = 1;
         lineRenderer.SetPosition(0, tracker.position);
         scoreIndex = 0;
 
@@ -158,7 +192,17 @@ public class ScoreKeeper : MonoBehaviour
 
     public void ResetLevel()
     {
+        StartCoroutine(ChangeLevelCoroutine());
+    }
+
+    public void ResetAndClearLevel()
+    {
         StartCoroutine(ResetCoroutine());
+    }
+
+    public void ResetToWire()
+    {
+        StartCoroutine(ResetToWireCoroutine());
     }
 
     enum ScoreMode { None, Timing, Grading, Idling }

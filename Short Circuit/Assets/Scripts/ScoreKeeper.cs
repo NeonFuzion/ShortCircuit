@@ -2,10 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Unity.VisualStudio.Editor;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 public class ScoreKeeper : MonoBehaviour
 {
@@ -16,6 +16,7 @@ public class ScoreKeeper : MonoBehaviour
     [SerializeField] Transform tracker, scoreParent;
     [SerializeField] GameObject prefabScoreIcon;
     [SerializeField] Player player;
+    [SerializeField] Image resetScreen;
     [SerializeField] UnityEvent<Transform> onTimeUp;
     [SerializeField] UnityEvent onStartLevel, onFinishGame;
 
@@ -29,15 +30,13 @@ public class ScoreKeeper : MonoBehaviour
 
     void Awake()
     {
-        animator = GetComponent<Animator>();
-
         StartLevel();
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-
+        animator = GetComponent<Animator>();
     }
 
     // Update is called once per frame
@@ -160,12 +159,16 @@ public class ScoreKeeper : MonoBehaviour
 
     void ResumeIdleAnim()
     {
+        Debug.Log("Clear");
+        resetScreen.color = new(1, 1, 1, 0);
         animator.CrossFade("Idle", 0, 0);
     }
 
     void IdleDark()
     {
-        animator.CrossFade("FadeDark", 0, 0);
+        Debug.Log("Black");
+        resetScreen.color = new(1, 1, 1, 1);
+        animator.CrossFade("Idle", 0, 0);
     }
 
     public void GradeLevel()

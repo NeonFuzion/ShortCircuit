@@ -55,10 +55,10 @@ public class Player : MonoBehaviour
         {
             case InputMode.Controlling:
                 currentAngle = Mathf.Clamp(currentAngle - input.x * spinSpeed * Time.deltaTime, -spinRange, spinRange);
+                currentDistance = Mathf.Clamp(currentDistance + input.y * launchSpeed * Time.deltaTime, minDistance, maxDistance);
+
                 float radians = (currentAngle + lastDirection) * Mathf.PI / 180;
                 directionVector = new(Mathf.Cos(radians), Mathf.Sin(radians));
-
-                currentDistance = Mathf.Clamp(currentDistance + input.y * launchSpeed * Time.deltaTime, minDistance, maxDistance);
                 target.localPosition = directionVector * currentDistance;
                 projectileVisual.eulerAngles = new(0, 0, currentAngle + lastDirection);
                 projectileVisual.localScale = new(1, directionVector.x > 0 ? 1 : -1, 1);
@@ -253,6 +253,14 @@ public class Player : MonoBehaviour
     {
         if (!active) return;
         input = context.ReadValue<Vector2>();
+    }
+
+    public void HandleMousePosition(InputAction.CallbackContext context)
+    {
+        Vector2 position = context.ReadValue<Vector2>();
+        Vector2 deltaPosition = Camera.main.ScreenToWorldPoint(position) - transform.position;
+        currentAngle = Mathf.Atan2(deltaPosition.y, deltaPosition.x) * 180 / Mathf.PI;
+        currentDistance = deltaPosition.magnitude;
     }
 
     public void HandleState(InputAction.CallbackContext context)

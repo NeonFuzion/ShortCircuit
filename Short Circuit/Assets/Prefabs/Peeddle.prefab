@@ -60,6 +60,14 @@ PrefabInstance:
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 6126800522962384222, guid: 630335e71701e7e40aa96e8e850f791b, type: 3}
+    - target: {fileID: 7830390623888242673, guid: 864ace6d20b49bb4d9a5c7a8f236b1a7, type: 3}
+      propertyPath: m_SpriteTilingProperty.oldSize.x
+      value: 2.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 7830390623888242673, guid: 864ace6d20b49bb4d9a5c7a8f236b1a7, type: 3}
+      propertyPath: m_SpriteTilingProperty.oldSize.y
+      value: 1.5
+      objectReference: {fileID: 0}
     - target: {fileID: 8059164146387394093, guid: 864ace6d20b49bb4d9a5c7a8f236b1a7, type: 3}
       propertyPath: m_Name
       value: Peeddle

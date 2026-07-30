@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -27,7 +26,7 @@ public class Player : MonoBehaviour
     Battery battery;
     Sprite oldCursor;
     InputMode inputMode;
-    SpriteRenderer aimRenderer;
+    SpriteRenderer aimRenderer, mubRenderer;
     Animator animator;
     LineRenderer wireRenderer, shadowRenderer;
     List<LightBulb> lightBulbs;
@@ -40,8 +39,9 @@ public class Player : MonoBehaviour
         shrinking = false;
         starting = true;
 
-        aimRenderer = target.GetChild(0).GetComponent<SpriteRenderer>();
         animator = GetComponent<Animator>();
+        aimRenderer = target.GetChild(0).GetComponent<SpriteRenderer>();
+        mubRenderer = projectileVisual.GetChild(0).GetComponent<SpriteRenderer>();
 
         StartLevel();
     }
@@ -61,7 +61,7 @@ public class Player : MonoBehaviour
                 directionVector = new(Mathf.Cos(radians), Mathf.Sin(radians));
                 target.localPosition = directionVector * currentDistance;
                 projectileVisual.eulerAngles = new(0, 0, currentAngle + lastDirection);
-                projectileVisual.localScale = new(1, directionVector.x > 0 ? 1 : -1, 1);
+                mubRenderer.flipY = directionVector.x < 0;
 
                 oldCursor = aimRenderer.sprite;
                 bool isPluggable = IsPluggable();
@@ -116,11 +116,11 @@ public class Player : MonoBehaviour
     {
         if (newPosition.z < 0) return;
         if (!active) return;
-        WireHandle(2);
+        WireHandle(WiringPhase.ComponentConnecting);
         if (!foundBattery) transform.position = newPosition;
         newPosition = Vector3.back;
         if (lightBulbs.Count > 0) lightBulbs[lightBulbs.Count - 1].AttachToCircuit();
-        WireHandle(-1);
+        WireHandle(WiringPhase.Resetting);
     }
 
     void ArcMovement()
@@ -143,7 +143,7 @@ public class Player : MonoBehaviour
         projectileVisual.eulerAngles = Vector3.forward * (trajectoryCurveValue > 0.1f ? (groundDirection + trajectoryAngle) : groundDirection);
         projectileShadow.eulerAngles = Vector3.forward * groundDirection;
 
-        WireHandle(1);
+        WireHandle(WiringPhase.Jumping);
 
         if (distanceProgress < 1) return;
         DetectAfterLanding();
@@ -156,13 +156,13 @@ public class Player : MonoBehaviour
         bum.eulerAngles = new(0, 0, currentAngle);
     }
 
-    void WireHandle(int phase)
+    void WireHandle(WiringPhase phase)
     {
         currentWiringTime -= Time.deltaTime;
 
         switch (phase)
         {
-            case -1:
+            case WiringPhase.Resetting:
                 LevelParent level = levelManager.CurrentLevel;
                 lastWireIndex = 0;
                 level.CreateWire();
@@ -171,13 +171,13 @@ public class Player : MonoBehaviour
                 wireRenderer.SetPosition(0, projectileVisual.position);
                 shadowRenderer.SetPosition(0, projectileShadow.position);
                 break;
-            case 0:
+            case WiringPhase.StartJumping:
                 int index = wireRenderer.positionCount++;
                 wireRenderer.SetPosition(index, projectileVisual.position);
                 index = shadowRenderer.positionCount++;
                 shadowRenderer.SetPosition(index, projectileShadow.position);
                 break;
-            case 1:
+            case WiringPhase.Jumping:
                 if (currentWiringTime > 0) break;
                 currentWiringTime = wirePointCooldown;
                 index = wireRenderer.positionCount++;
@@ -185,7 +185,7 @@ public class Player : MonoBehaviour
                 index = shadowRenderer.positionCount - 1;
                 shadowRenderer.SetPosition(index, projectileShadow.position);
                 break;
-            case 2:
+            case WiringPhase.ComponentConnecting:
                 index = wireRenderer.positionCount++;
                 wireRenderer.SetPosition(index, projectileVisual.position);
                 index = shadowRenderer.positionCount++;
@@ -238,7 +238,7 @@ public class Player : MonoBehaviour
         targetPosition = transform.position;
         startPosition = transform.position;
 
-        WireHandle(-1);
+        WireHandle(WiringPhase.Resetting);
         Reset();
     }
 
@@ -259,8 +259,13 @@ public class Player : MonoBehaviour
     {
         Vector2 position = context.ReadValue<Vector2>();
         Vector2 deltaPosition = Camera.main.ScreenToWorldPoint(position) - transform.position;
-        currentAngle = Mathf.Atan2(deltaPosition.y, deltaPosition.x) * 180 / Mathf.PI;
+        float angle = Mathf.Atan2(deltaPosition.y, deltaPosition.x) * 180 / Mathf.PI;
+        float adjustedAngle = angle - lastDirection;
         currentDistance = deltaPosition.magnitude;
+        Debug.Log(angle + " | " + lastDirection);
+
+        if (angle > spinRange + lastDirection || angle < -spinRange + lastDirection) return;
+        currentAngle = adjustedAngle;
     }
 
     public void HandleState(InputAction.CallbackContext context)
@@ -304,5 +309,6 @@ public class Player : MonoBehaviour
         EndGame();
     }
     
-    public enum InputMode { None, Controlling, Launching }
+    enum InputMode { None, Controlling, Launching }
+    enum WiringPhase { None, Resetting, StartJumping, Jumping, ComponentConnecting }
 }

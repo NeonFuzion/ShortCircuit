@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -9,6 +8,8 @@ using UnityEngine.UI;
 
 public class ScoreKeeper : MonoBehaviour
 {
+    public static ScoreKeeper Instance;
+
     [SerializeField] float resetTime, trackerSpeed;
     [SerializeField] TextMeshProUGUI timerText;
     [SerializeField] LevelManager levelManager;
@@ -18,18 +19,22 @@ public class ScoreKeeper : MonoBehaviour
     [SerializeField] Player player;
     [SerializeField] Image resetScreen;
     [SerializeField] UnityEvent<Transform> onTimeUp;
-    [SerializeField] UnityEvent onStartLevel, onFinishGame, onSuccessfulLevel, onFailLevel;
+    [SerializeField] UnityEvent onStartLevel, onSuccessfulLevel, onFailLevel;
 
     float currentTime;
     int scoreIndex;
 
     List<CircuitComponent> currentCircuitComponents, allCircuitComponents;
-    List<Vector2> positions;
+    List<Vector2> wirePoints;
     ScoreMode scoreMode;
     Animator animator;
 
     void Awake()
     {
+        if (!Instance) Instance = this;
+
+        currentCircuitComponents = new ();
+
         StartLevel();
     }
 
@@ -46,23 +51,6 @@ public class ScoreKeeper : MonoBehaviour
         MoveTracker();
     }
 
-    IEnumerator ResetCoroutine()
-    {
-        scoreMode = ScoreMode.Idling;
-        lineRenderer.positionCount = 0;
-        animator.CrossFade("FadeIn", 0, 0);
-        yield return new WaitForSeconds(resetTime);
-        animator.CrossFade("FadeOut", 0, 0);
-        StartGame();
-    }
-
-    IEnumerator ResetToWireCoroutine()
-    {
-        animator.CrossFade("FadeIn", 0, 0);
-        yield return new WaitForSeconds(resetTime);
-        animator.CrossFade("FadeOut", 0, 0);
-    }
-
     IEnumerator ChangeLevelCoroutine()
     {
         scoreMode = ScoreMode.Idling;
@@ -74,10 +62,10 @@ public class ScoreKeeper : MonoBehaviour
     {
         scoreParent.gameObject.SetActive(false);
         scoreMode = ScoreMode.Timing;
-        currentTime = levelManager.CurrentLevel.Time;
-        allCircuitComponents = levelManager.CurrentCircuitComponents;
-        currentCircuitComponents = new();
         LevelParent level = levelManager.CurrentLevel;
+        currentTime = level.Time;
+        allCircuitComponents = levelManager.CurrentCircuitComponents;
+        currentCircuitComponents.Clear();
         player.Initialize(allCircuitComponents.Count, level.transform, level.Battery);
         onStartLevel?.Invoke();
     }
@@ -85,7 +73,7 @@ public class ScoreKeeper : MonoBehaviour
     void RunTimer()
     {
         if (scoreMode != ScoreMode.Timing) return;
-        timerText.SetText((Mathf.Round(currentTime * 100) / 100).ToString());
+        timerText.SetText(Math.Round(currentTime, 2) + "");
         currentTime -= Time.deltaTime;
 
         if (currentTime > 0) return;
@@ -97,19 +85,19 @@ public class ScoreKeeper : MonoBehaviour
     void MoveTracker()
     {
         if (scoreMode != ScoreMode.Grading) return;
-        int index = positions.Count - 1;
-        Vector3 target = positions[index];
+        int index = wirePoints.Count - 1;
+        Vector3 target = wirePoints[index];
         Vector3 direction = target - tracker.position;
         Vector3 movement = direction.normalized * trackerSpeed * Time.deltaTime;
 
         if (direction.sqrMagnitude < movement.sqrMagnitude || Mathf.Abs(direction.sqrMagnitude - movement.sqrMagnitude) < 0.002f)
         {
             tracker.position = target;
-            positions.RemoveAt(index);
+            wirePoints.RemoveAt(index);
             index = lineRenderer.positionCount++;
             lineRenderer.SetPosition(index, tracker.position);
 
-            if (positions.Count > 0) return;
+            if (wirePoints.Count > 0) return;
             ResetLevel();
         }
         else
@@ -126,7 +114,7 @@ public class ScoreKeeper : MonoBehaviour
         if (currentCircuitComponents.Contains(script)) return;
         if (script.IsPassable)
         {
-            (script as LightBulb).PowerBulb();
+            script.ActivateComponent();
             currentCircuitComponents.Add(script);
             Transform scoreIcon = scoreParent.GetChild(scoreIndex++);
             scoreIcon.GetChild(0).gameObject.SetActive(false);
@@ -134,7 +122,7 @@ public class ScoreKeeper : MonoBehaviour
         }
         else
         {
-            ResetAndClearLevel();
+            FailLevel();
         }
     }
 
@@ -142,21 +130,16 @@ public class ScoreKeeper : MonoBehaviour
     {
         if (currentCircuitComponents.Count == allCircuitComponents.Count)
         {
-            bool isFinalLevel = levelManager.IncrementLevel();
+            levelManager.IncrementLevel();
             onSuccessfulLevel?.Invoke();
-            if (!isFinalLevel)
-            {
-                onFinishGame?.Invoke();
-                return;
-            }
+            StartLevel();
         }
         else
         {
             levelManager.CurrentLevel.ClearLevel();
             currentCircuitComponents.Clear();
-            onFailLevel?.Invoke();
+            FailLevel();
         }
-        StartLevel();
     }
 
     void ResumeIdleAnim()
@@ -173,10 +156,10 @@ public class ScoreKeeper : MonoBehaviour
 
     public void GradeLevel()
     {
-        positions = levelManager.CurrentLevel.GetWirePoints();
-        positions.Reverse();
-        tracker.position = positions[0];
-        positions.RemoveAt(positions.Count - 1);
+        wirePoints = levelManager.CurrentLevel.GetWirePoints();
+        wirePoints.Reverse();
+        tracker.position = wirePoints[0];
+        wirePoints.RemoveAt(wirePoints.Count - 1);
         lineRenderer.positionCount = 1;
         lineRenderer.SetPosition(0, tracker.position);
         scoreIndex = 0;
@@ -193,24 +176,19 @@ public class ScoreKeeper : MonoBehaviour
         scoreMode = ScoreMode.Grading;
     }
 
-    public void ClearLevel()
-    {
-        lineRenderer.positionCount = 0;
-    }
-
     public void ResetLevel()
     {
         StartCoroutine(ChangeLevelCoroutine());
     }
 
-    public void ResetAndClearLevel()
+    public void AddOnFailLevelListener(UnityAction unityAction)
     {
-        StartCoroutine(ResetCoroutine());
+        onFailLevel?.AddListener(unityAction);
     }
 
-    public void ResetToWire()
+    public void FailLevel()
     {
-        StartCoroutine(ResetToWireCoroutine());
+        animator.CrossFade("FadeFull", 0, 0);
     }
 
     enum ScoreMode { None, Timing, Grading, Idling }

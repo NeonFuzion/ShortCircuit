@@ -1,29 +1,16 @@
-using System.Collections;
-using Unity.VisualScripting;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 
-public class NibbleDog : MonoBehaviour
+public class NibbleDog : Dog
 {
-    [SerializeField] float idleMin, idleMax, wanderMin, wanderMax, speed, runSpeedMultiplier, playerDetectRadius, nibbleCooldown;
+    [SerializeField] float runSpeedMultiplier, playerDetectRadius, nibbleCooldown;
     [SerializeField] UnityEvent onBreakCircuit, onDetectPlayer;
 
-    DogState dogState;
-    Vector2 startPosition, endPosition, wanderVector;
-    Animator animator;
+    Transform player;
+    LightBulb targetBulb;
 
-    bool onCooldown;
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        animator = GetComponent<Animator>();
-
-        StartDogging();
-    }
-
-    // Update is called once per frame
-    void Update()
+    protected override void HandleDogState()
     {
         switch (dogState)
         {
@@ -40,122 +27,53 @@ public class NibbleDog : MonoBehaviour
 
                 if (Vector2.Distance(transform.position, endPosition) > 0.1f) break;
                 dogState = DogState.Idle;
-                StartCoroutine(IdleCoroutine());
+                StartIdle();
                 break;
-            case DogState.Running:
+            case DogState.Busy:
                 movement = wanderVector * speed * runSpeedMultiplier * Time.deltaTime;
-                if (movement.sqrMagnitude < ((Vector3)endPosition - transform.position).sqrMagnitude)
+                if (!transform.position.Equals(endPosition) && movement.sqrMagnitude < ((Vector3)endPosition - transform.position).sqrMagnitude)
+                {
                     transform.position += movement;
+                }
                 else
+                {
                     transform.position = endPosition;
-
-                if (Vector2.Distance(transform.position, endPosition) > 0.1f) break;
-                dogState = DogState.Biting;
-                animator.CrossFade("Bite", 0, 0);
+                    animator.CrossFade("Bite", 0, 0);
+                }
                 break;
         }
-    }
-
-    IEnumerator IdleCoroutine()
-    {
-        animator.CrossFade("Idle", 0, 0);
-        yield return new WaitForSeconds(Random.value * (idleMax - idleMin) + idleMin);
-        SetWanderDirection();
-        dogState = DogState.Wandering;
-    }
-
-    IEnumerator CooldownCoroutine()
-    {
-        onCooldown = true;
-        yield return new WaitForSeconds(nibbleCooldown);
-        onCooldown = false;
-    }
-
-    void SetWanderDirection()
-    {
-        float angle = Random.value * 2 * Mathf.PI;
-        float distance = Random.Range(wanderMin, wanderMax);
-
-        while (true)
-        {
-            wanderVector = new(Mathf.Cos(angle), Mathf.Sin(angle));
-            RaycastHit2D hit = Physics2D.Raycast(transform.position, wanderVector, distance, LayerMask.GetMask("Unpluggable") + LayerMask.GetMask("Danger"));
-
-            if (!hit) break;
-            distance = Mathf.Clamp(Vector2.Distance(transform.position, hit.point) - 1, 0, wanderMax);
-
-            if (distance > 1) break;
-        }
-
-        startPosition = transform.position;
-        endPosition = startPosition + wanderVector * distance;
-        transform.GetChild(0).localScale = new(wanderVector.x > 0 ? 1 : -1, transform.localScale.y, transform.localScale.z);
-        animator.CrossFade("Walk", 0, 0);
     }
 
     void DetectPlayer()
     {
-        if (onCooldown) return;
-        onDetectPlayer?.Invoke();
-        bool found = false;
-        foreach (Collider2D collision in Physics2D.OverlapCircleAll(transform.position, playerDetectRadius))
+        if (!player)
         {
-            Player player = collision.GetComponent<Player>();
-
-            if (!player) continue;
-            if (!player.Active) return;
-            found = true;
-            break;
+            Collider2D collision = Physics2D.OverlapCircle(transform.position, playerDetectRadius, LayerMask.GetMask("Player"));
+            if (collision) player = collision.transform;
         }
 
-        if (!found) return;
-        float shortestDistance = 0;
-        Transform target = null;
-        foreach (Collider2D collision in Physics2D.OverlapCircleAll(transform.position, 40, LayerMask.GetMask("LightBulb")))
-        {
-            float distance = Vector2.Distance(collision.transform.position, transform.position);
+        if (!player) return;
+        if (Vector2.Distance(player.position, transform.position) > playerDetectRadius) return;
+        Collider2D[] allFound = Physics2D.OverlapCircleAll(transform.position, 40, LayerMask.GetMask("LightBulb"));
 
-            if (distance > shortestDistance && shortestDistance != 0) continue;
-            shortestDistance = distance;
-            target = collision.transform;
-        }
-
-        if (!target) return;
-        wanderVector = (target.position - transform.position).normalized;
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, wanderVector, shortestDistance, LayerMask.GetMask("Danger"));
+        if (allFound.Length == 0) return;
+        Transform target = allFound.OrderBy(collider => Vector2.Distance(collider.transform.position, transform.position)).FirstOrDefault().transform;
+        wanderVector = target.position - transform.position;
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, wanderVector, wanderVector.magnitude, boundaryLayer);
 
         if (hit) return;
-        startPosition = transform.position;
+        onDetectPlayer?.Invoke();
         endPosition = target.position;
-        dogState = DogState.Running;
+        dogState = DogState.Busy;
+        targetBulb = target.GetComponent<LightBulb>();
         StopAllCoroutines();
     }
 
     void Bite()
     {
-        Collider2D collider = Physics2D.OverlapCircle(transform.position, 0.5f, LayerMask.GetMask("LightBulb"));
-
-        if (!collider) return;
-        LightBulb lightBulb = collider.GetComponent<LightBulb>();
-        lightBulb.BreakBulb();
+        ScoreKeeper.Instance.FailLevel();
+        targetBulb.BreakBulb();
         onBreakCircuit?.Invoke();
-        StartCoroutine(CooldownCoroutine());
+        dogState = DogState.None;
     }
-
-    void StartDogging()
-    {
-        onCooldown = false;
-        if (Random.value > 0.5f)
-        {
-            dogState = DogState.Idle;
-            StartCoroutine(IdleCoroutine());
-        }
-        else
-        {
-            dogState = DogState.Wandering;
-            SetWanderDirection();
-        }
-    }
-    
-    public enum DogState { None, Idle, Wandering, Running, Biting }
 }

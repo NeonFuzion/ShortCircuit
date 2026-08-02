@@ -70,6 +70,11 @@ public class CircuitComponent : MonoBehaviour
         isPassable = !isPolarized;
     }
 
+    public virtual void ActivateComponent()
+    {
+        
+    }
+
     public void AttachToCircuit()
     {
         attached = true;

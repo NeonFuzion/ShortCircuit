@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class LevelParent : MonoBehaviour
@@ -8,7 +9,8 @@ public class LevelParent : MonoBehaviour
     [SerializeField] GameObject prefabWire;
     [SerializeField] Battery battery;
 
-    List<CircuitComponent> circuitComponents;
+    CircuitComponent[] circuitComponents;
+    Dog[] dogs;
     LineRenderer wireRenderer, shadowRenderer;
     GameObject currentWire;
 
@@ -17,7 +19,7 @@ public class LevelParent : MonoBehaviour
     public Battery Battery { get => battery; }
     public LineRenderer WireRenderer { get => wireRenderer; }
     public LineRenderer ShadowRenderer { get => shadowRenderer; }
-    public List<CircuitComponent> CircuitComponents { get => circuitComponents; }
+    public CircuitComponent[] CircuitComponents { get => circuitComponents; }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -33,11 +35,8 @@ public class LevelParent : MonoBehaviour
 
     public void Initialize()
     {
-        circuitComponents = new();
-        foreach (Transform child in componentParent)
-        {
-            circuitComponents.Add(child.GetComponent<CircuitComponent>());
-        }
+        circuitComponents = GetComponentsInChildren<CircuitComponent>().Where(component => !(component as Battery)).ToArray();
+        dogs = GetComponentsInChildren<Dog>();
     }
 
     public void CreateWire()
@@ -63,18 +62,12 @@ public class LevelParent : MonoBehaviour
 
     public void ClearLevel()
     {
-        for (int i = 0; i < wireParent.childCount; i++)
+        wireParent.GetComponentsInChildren<LineRenderer>().ToList().ForEach(wire => Destroy(wire.gameObject));
+        circuitComponents.ToList().ForEach(component =>
         {
-            GameObject wire = wireParent.GetChild(i).gameObject;
-            Destroy(wire);
-        }
-        for (int i = 0; i < componentParent.childCount; i++)
-        {
-            Transform component = componentParent.GetChild(i);
-            CircuitComponent script = component.GetComponent<CircuitComponent>();
-            script.DetachFromCircuit();
-
-            (script as LightBulb)?.ResetComponent();
-        }
+            component.DetachFromCircuit();
+            component.ResetComponent();
+        });
+        dogs.ToList().ForEach(dog => dog.ResetDog());
     }
 }

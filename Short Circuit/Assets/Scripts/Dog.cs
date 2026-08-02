@@ -1,23 +1,51 @@
 using System.Collections;
 using UnityEngine;
 
-public class Dog : MonoBehaviour
+public abstract class Dog : MonoBehaviour
 {
-    [SerializeField] float idleMin, idleMax, wanderMin, wanderMax, speed;
+    [SerializeField] protected float idleMin, idleMax, wanderMin, wanderMax, speed;
 
-    DogState dogState;
-    Vector2 startPosition, endPosition, wanderVector;
-    Animator animator;
+    protected Animator animator;
+    protected DogState dogState;
+    protected LayerMask boundaryLayer;
+    protected Vector2 endPosition, wanderVector, resetPosition;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    protected void Start()
     {
         animator = GetComponent<Animator>();
+        boundaryLayer = LayerMask.GetMask("Inaccessible") + LayerMask.GetMask("DogPen");
+        resetPosition = transform.position;
 
+        if (!gameObject.activeInHierarchy) return;
+        StartDogging();
+    }
+
+    // Update is called once per frame
+    protected void Update()
+    {
+        HandleDogState();
+    }
+
+    IEnumerator IdleCoroutine()
+    {
+        animator.CrossFade("Idle", 0, 0);
+        yield return new WaitForSeconds(Random.Range(idleMin, idleMax));
+        SetWanderDirection();
+        dogState = DogState.Wandering;
+    }
+
+    protected void StartIdle()
+    {
+        StartCoroutine(IdleCoroutine());
+    }
+
+    protected void StartDogging()
+    {
         if (Random.value > 0.5f)
         {
             dogState = DogState.Idle;
-            StartCoroutine(IdleCoroutine());
+            StartIdle();
         }
         else
         {
@@ -26,54 +54,29 @@ public class Dog : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        switch (dogState)
-        {
-            case DogState.Wandering:
-                Vector3 movement = wanderVector * speed * Time.deltaTime;
-                if (movement.sqrMagnitude < ((Vector3)endPosition - transform.position).sqrMagnitude)
-                    transform.position += movement;
-                else
-                    transform.position = endPosition;
-
-                if (Vector2.Distance(transform.position, endPosition) > 0.1f) break;
-                dogState = DogState.Idle;
-                StartCoroutine(IdleCoroutine());
-                break;
-        }
-    }
-
-    IEnumerator IdleCoroutine()
-    {
-        animator.CrossFade("Idle", 0, 0);
-        yield return new WaitForSeconds(Random.value * (idleMax - idleMin) + idleMin);
-        SetWanderDirection();
-        dogState = DogState.Wandering;
-    }
-
-    void SetWanderDirection()
+    protected void SetWanderDirection()
     {
         float angle = Random.value * 2 * Mathf.PI;
         float distance = Random.Range(wanderMin, wanderMax);
 
-        while (true)
+        wanderVector = new(Mathf.Cos(angle), Mathf.Sin(angle));
+        if (Physics2D.Raycast(transform.position, wanderVector, distance, boundaryLayer) is RaycastHit2D hit)
         {
-            wanderVector = new(Mathf.Cos(angle), Mathf.Sin(angle));
-            RaycastHit2D hit = Physics2D.Raycast(transform.position, wanderVector, distance, LayerMask.GetMask("Unpluggable") + LayerMask.GetMask("Danger"));
-
-            if (!hit) break;
-            distance = Mathf.Clamp(Vector2.Distance(transform.position, hit.point) - 1, 0, wanderMax);
-
-            if (distance > 1) break;
+            distance = Mathf.Clamp(Vector2.Distance(transform.position, hit.point) - 1, 0, distance);
         }
 
-        startPosition = transform.position;
-        endPosition = startPosition + wanderVector * distance;
-        transform.GetChild(0).localScale = new(wanderVector.x > 0 ? 1 : -1, transform.localScale.y, transform.localScale.z);
+        endPosition = (Vector2)transform.position + wanderVector * distance;
+        transform.GetChild(0).localScale = new(Mathf.Sign(wanderVector.x), transform.localScale.y, transform.localScale.z);
         animator.CrossFade("Walk", 0, 0);
     }
-    
-    public enum DogState { None, Idle, Wandering }
+
+    protected abstract void HandleDogState();
+
+    public void ResetDog()
+    {
+        transform.position = resetPosition;
+        StartDogging();
+    }
+
+    protected enum DogState { None, Idle, Wandering, Busy }
 }

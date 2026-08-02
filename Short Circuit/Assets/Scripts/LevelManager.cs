@@ -1,9 +1,12 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class LevelManager : MonoBehaviour
 {
     [SerializeField] Transform levels;
+    [SerializeField] UnityEvent onFinishGame;
 
     int index;
 
@@ -47,23 +50,27 @@ public class LevelManager : MonoBehaviour
         GameObject newLevel = levelParents[index];
         currentLevel = newLevel.GetComponent<LevelParent>();
         currentLevel.Initialize();
-        currentCircuitComponents = currentLevel.CircuitComponents;
+        currentCircuitComponents = currentLevel.CircuitComponents.ToList();
     }
 
-    public bool IncrementLevel()
+    public void IncrementLevel()
     {
-        if (index == levelParents.Length - 1)
+        if (index >= levelParents.Length - 1)
         {
-            return false;
+            onFinishGame?.Invoke();
         }
         else
         {
             index++;
-            if (index > 0) levelParents[index - 1].SetActive(false);
             levelParents[index].SetActive(true);
             InitializeLevel();
-            return true;
         }
+    }
+
+    public void HideOldLevel()
+    {
+        if (index <= 0) return;
+        levelParents[index - 1].SetActive(false);
     }
 
     public void ShowAllLevels()

@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
-    [SerializeField] float spinSpeed, spinRange, launchSpeed, minDistance, maxDistance, speed, maxHeight, wirePointCooldown;
+    [SerializeField] float spinSpeed, launchSpeed, minDistance, maxDistance, speed, maxHeight, wirePointCooldown;
     [SerializeField] Transform target, spinner, bum, projectileShadow, projectileVisual;
     [SerializeField] Sprite aimableSprite, unAimableSprite;
     [SerializeField] AnimationCurve trajectoryCurve;
@@ -16,8 +16,8 @@ public class Player : MonoBehaviour
     [SerializeField] UnityEvent onEndGame, onResetToWire, onLaunch;
     [SerializeField] UnityEvent<Transform> onStartGame;
 
-    float totalDistance, groundDirection, lastDirection, currentAngle, currentDistance, currentWiringTime;
-    bool active, shrinking, starting, foundBattery;
+    float totalDistance, groundDirection, currentAngle, currentDistance, currentWiringTime;
+    bool shrinking, starting, foundBattery;
     int max, lastWireIndex;
 
     Vector2 startPosition, targetPosition, directionVector, input, spawnPosition;
@@ -25,13 +25,11 @@ public class Player : MonoBehaviour
     Transform levelTarget;
     Battery battery;
     Sprite oldCursor;
-    InputMode inputMode;
+    PlayerState playerState;
     SpriteRenderer aimRenderer, mubRenderer;
     Animator animator;
     LineRenderer wireRenderer, shadowRenderer;
-    List<LightBulb> lightBulbs;
-
-    public bool Active { get => active; }
+    List<CircuitComponent> attachedComponents;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -49,44 +47,47 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (!active) return;
-
-        switch (inputMode)
+        switch (playerState)
         {
-            case InputMode.Controlling:
-                currentAngle = Mathf.Clamp(currentAngle - input.x * spinSpeed * Time.deltaTime, -spinRange, spinRange);
+            case PlayerState.Controlling:
+                currentAngle = (currentAngle - input.x * spinSpeed * Time.deltaTime) % 360;
                 currentDistance = Mathf.Clamp(currentDistance + input.y * launchSpeed * Time.deltaTime, minDistance, maxDistance);
 
-                float radians = (currentAngle + lastDirection) * Mathf.PI / 180;
+                float radians = currentAngle * Mathf.PI / 180;
                 directionVector = new(Mathf.Cos(radians), Mathf.Sin(radians));
                 target.localPosition = directionVector * currentDistance;
-                projectileVisual.eulerAngles = new(0, 0, currentAngle + lastDirection);
+                projectileVisual.eulerAngles = new(0, 0, currentAngle);
                 mubRenderer.flipY = directionVector.x < 0;
 
-                oldCursor = aimRenderer.sprite;
-                bool isPluggable = IsPluggable();
-                aimRenderer.sprite = isPluggable ? aimableSprite : unAimableSprite;
-
-                if (aimRenderer.sprite != oldCursor) animator.CrossFade(isPluggable ? "Selectable" : "NonSelectable", 0, 0);
+                if (IsPluggable())
+                {
+                    aimRenderer.sprite = aimableSprite;
+                    animator.CrossFade("Selectable", 0, 0);
+                }
+                else
+                {
+                    aimRenderer.sprite = unAimableSprite;
+                    animator.CrossFade("NonSelectable", 0, 0);
+                }
         
                 if (!shrinking) break;
                 EndGame();
                 break;
-            case InputMode.Launching:
+            case PlayerState.Launching:
                 ArcMovement();
                 target.position = targetPosition;
                 break;
         }
     }
 
-    bool IsPluggable() => !Physics2D.OverlapCircle(target.position, 0.1f, LayerMask.GetMask("Unpluggable"));
+    bool IsPluggable() => !Physics2D.OverlapCircle(target.position, 0.1f, LayerMask.GetMask("Inaccessible"));
 
-    void Reset()
+    void ResetPlayer()
     {
-        lastDirection = Mathf.Atan2(directionVector.y, directionVector.x) * 180 / Mathf.PI;
-        spinner.localEulerAngles = new();
+        currentAngle = Mathf.Atan2(directionVector.y, directionVector.x) * 180 / Mathf.PI;
+        spinner.localEulerAngles = Vector3.zero;
         target.localPosition = Vector2.down;
-        inputMode = InputMode.Controlling;
+        playerState = PlayerState.Controlling;
     }
 
     void DetectAfterLanding()
@@ -102,12 +103,16 @@ public class Player : MonoBehaviour
                 wireRenderer.positionCount = lastWireIndex;
                 transform.position = startPosition;
             }
-
-            CircuitComponent script = collider.GetComponent<CircuitComponent>();
-            if (script)
+            if (collider.GetComponent<CircuitComponent>() is CircuitComponent script)
             {
-                if (!lightBulbs.Contains(script) && script as LightBulb) lightBulbs.Add(script as LightBulb);
-                else if ((script as Battery && max == lightBulbs.Count) || shrinking) DetectBattery();
+                if (script as Battery)
+                {
+                    DetectBattery();
+                }
+                else
+                {
+                    if (!attachedComponents.Contains(script)) attachedComponents.Add(script);
+                }
             }
         }
     }
@@ -115,11 +120,10 @@ public class Player : MonoBehaviour
     void ConnectBulbs()
     {
         if (newPosition.z < 0) return;
-        if (!active) return;
         WireHandle(WiringPhase.ComponentConnecting);
         if (!foundBattery) transform.position = newPosition;
         newPosition = Vector3.back;
-        if (lightBulbs.Count > 0) lightBulbs[lightBulbs.Count - 1].AttachToCircuit();
+        if (attachedComponents.Count > 0) attachedComponents[attachedComponents.Count - 1].AttachToCircuit();
         WireHandle(WiringPhase.Resetting);
     }
 
@@ -139,7 +143,7 @@ public class Player : MonoBehaviour
         float radians = Mathf.Atan2(differenceVector.y, differenceVector.x);
         groundDirection = (radians > 0 ? radians : radians + 2 * Mathf.PI) * 180 / Mathf.PI % 360;
 
-        float trajectoryAngle = (1 - trajectoryCurveValue) * (distanceProgress > 0.5f ? -1 : 1) * maxHeight * 20;
+        float trajectoryAngle = (1 - trajectoryCurveValue) * -Mathf.Sign(distanceProgress / 2) * maxHeight * 20;
         projectileVisual.eulerAngles = Vector3.forward * (trajectoryCurveValue > 0.1f ? (groundDirection + trajectoryAngle) : groundDirection);
         projectileShadow.eulerAngles = Vector3.forward * groundDirection;
 
@@ -148,7 +152,7 @@ public class Player : MonoBehaviour
         if (distanceProgress < 1) return;
         DetectAfterLanding();
         if (wireRenderer) lastWireIndex = wireRenderer.positionCount - 1;
-        Reset();
+        ResetPlayer();
         ConnectBulbs();
 
         if (!starting) return;
@@ -200,14 +204,14 @@ public class Player : MonoBehaviour
     {
         startPosition = transform.position;
         targetPosition = battery.GetBatteryPositions()[1];
-        inputMode = InputMode.Launching;
+        playerState = PlayerState.Launching;
     }
 
     void DetectBattery()
     {
         onEndGame?.Invoke();
-        projectileVisual.eulerAngles = new();
-        active = false;
+        projectileVisual.eulerAngles = Vector3.zero;
+        playerState = PlayerState.Waiting;
         shrinking = false;
     }
 
@@ -218,28 +222,25 @@ public class Player : MonoBehaviour
 
     public void StartLevel()
     {
-        active = true;
         foundBattery = false;
         
-        lightBulbs = new();
+        attachedComponents = new();
         spawnPosition = battery.GetBatteryPositions()[0];
         transform.position = spawnPosition;
         bum.position = spawnPosition;
-        inputMode = InputMode.Controlling;
+        playerState = PlayerState.Controlling;
         newPosition = Vector3.back;
         onStartGame?.Invoke(levelTarget);
 
         currentAngle = 0;
-        lastDirection = 0;
-        directionVector = new();
-        target.localPosition = new();
-        spinner.eulerAngles = new();
-        directionVector = new();
+        directionVector = Vector2.zero;
+        target.localPosition = Vector3.zero;
+        spinner.eulerAngles = Vector3.zero;
         targetPosition = transform.position;
         startPosition = transform.position;
 
         WireHandle(WiringPhase.Resetting);
-        Reset();
+        ResetPlayer();
     }
 
     public void Initialize(int max, Transform levelTarget, Battery battery)
@@ -251,7 +252,6 @@ public class Player : MonoBehaviour
 
     public void HandleMovement(InputAction.CallbackContext context)
     {
-        if (!active) return;
         input = context.ReadValue<Vector2>();
     }
 
@@ -259,20 +259,14 @@ public class Player : MonoBehaviour
     {
         Vector2 position = context.ReadValue<Vector2>();
         Vector2 deltaPosition = Camera.main.ScreenToWorldPoint(position) - transform.position;
-        float angle = Mathf.Atan2(deltaPosition.y, deltaPosition.x) * 180 / Mathf.PI;
-        float adjustedAngle = angle - lastDirection;
+        currentAngle = Mathf.Atan2(deltaPosition.y, deltaPosition.x) * 180 / Mathf.PI;
         currentDistance = deltaPosition.magnitude;
-        Debug.Log(angle + " | " + lastDirection);
-
-        if (angle > spinRange + lastDirection || angle < -spinRange + lastDirection) return;
-        currentAngle = adjustedAngle;
     }
 
     public void HandleState(InputAction.CallbackContext context)
     {
-        if (!active) return;
         if (!context.started) return;
-        if (inputMode != InputMode.Controlling) return;
+        if (playerState != PlayerState.Controlling) return;
         if (!IsPluggable()) return;
         directionVector = target.localPosition;
         currentDistance = minDistance;
@@ -284,7 +278,7 @@ public class Player : MonoBehaviour
         {
             CircuitComponent script = collider.GetComponent<CircuitComponent>();
 
-            if (lightBulbs.Contains(script)) continue;
+            if (attachedComponents.Contains(script)) continue;
             if (!script) continue;
             targetPosition = script.GetNearestPosition(target.position);
             newPosition = script.GetFurtherPosition(target.position);
@@ -300,15 +294,9 @@ public class Player : MonoBehaviour
 
         WireHandle(0);
         onLaunch?.Invoke();
-        inputMode = InputMode.Launching;
-    }
-
-    public void HandleShrink(InputAction.CallbackContext context)
-    {
-        if (!context.started) return;
-        EndGame();
+        playerState = PlayerState.Launching;
     }
     
-    enum InputMode { None, Controlling, Launching }
+    enum PlayerState { None, Controlling, Launching, Waiting }
     enum WiringPhase { None, Resetting, StartJumping, Jumping, ComponentConnecting }
 }

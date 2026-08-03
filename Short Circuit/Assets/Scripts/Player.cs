@@ -37,6 +37,7 @@ public class Player : MonoBehaviour
         shrinking = false;
         starting = true;
 
+        attachedComponents = new ();
         animator = GetComponent<Animator>();
         aimRenderer = target.GetChild(0).GetComponent<SpriteRenderer>();
         mubRenderer = projectileVisual.GetChild(0).GetComponent<SpriteRenderer>();
@@ -224,7 +225,6 @@ public class Player : MonoBehaviour
     {
         foundBattery = false;
         
-        attachedComponents = new();
         spawnPosition = battery.GetBatteryPositions()[0];
         transform.position = spawnPosition;
         bum.position = spawnPosition;
@@ -239,6 +239,7 @@ public class Player : MonoBehaviour
         targetPosition = transform.position;
         startPosition = transform.position;
 
+        attachedComponents.Clear();
         WireHandle(WiringPhase.Resetting);
         ResetPlayer();
     }

@@ -56,7 +56,7 @@ public class NibbleDog : Dog
         Vector2 playerDistanceVector = player.position - transform.position;
 
         if (playerDistanceVector.magnitude > playerDetectRadius) return;
-        if (Physics2D.Raycast(transform.position, playerDistanceVector, playerDistanceVector.magnitude, LayerMask.GetMask("Ground"))) return;
+        if (Physics2D.Raycast(transform.position, playerDistanceVector, playerDistanceVector.magnitude, boundaryLayer)) return;
         Collider2D[] allFound = Physics2D.OverlapCircleAll(transform.position, 40, LayerMask.GetMask("LightBulb"));
 
         if (allFound.Length == 0) return;
@@ -71,6 +71,7 @@ public class NibbleDog : Dog
             .FirstOrDefault().transform;
         onDetectPlayer?.Invoke();
         endPosition = target.position;
+        wanderVector = endPosition - (Vector2)transform.position;
         dogState = DogState.Busy;
         targetBulb = target.GetComponent<LightBulb>();
         StopAllCoroutines();

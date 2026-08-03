@@ -21,14 +21,7 @@ public class LevelManager : MonoBehaviour
     {
         index = 0;
 
-        levelParents = new GameObject[levels.childCount];
-        for (int i = 0; i < levelParents.Length; i++)
-        {
-            levelParents[i] = levels.GetChild(i).gameObject;
-
-            if (i == 0) continue;
-            levelParents[i].SetActive(false);
-        }
+        levelParents = levels.GetComponentsInChildren<LevelParent>().Select(levelParent => levelParent.gameObject).ToArray();
 
         InitializeLevel();
     }

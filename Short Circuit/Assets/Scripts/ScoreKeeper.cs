@@ -13,7 +13,7 @@ public class ScoreKeeper : MonoBehaviour
     [SerializeField] float resetTime, trackerSpeed;
     [SerializeField] TextMeshProUGUI timerText;
     [SerializeField] LevelManager levelManager;
-    [SerializeField] LineRenderer lineRenderer;
+    [SerializeField] LineRenderer powerRenderer;
     [SerializeField] Transform tracker, scoreParent;
     [SerializeField] GameObject prefabScoreIcon;
     [SerializeField] Player player;
@@ -70,6 +70,16 @@ public class ScoreKeeper : MonoBehaviour
         onStartLevel?.Invoke();
     }
 
+    void ResetFailedLevel()
+    {
+        powerRenderer.positionCount = 0;
+        scoreParent.gameObject.SetActive(false);
+        levelManager.CurrentLevel.ClearLevel();
+        currentCircuitComponents.Clear();
+        onFailLevel?.Invoke();
+        StartLevel();
+    }
+
     void RunTimer()
     {
         if (scoreMode != ScoreMode.Timing) return;
@@ -94,11 +104,11 @@ public class ScoreKeeper : MonoBehaviour
         {
             tracker.position = target;
             wirePoints.RemoveAt(index);
-            index = lineRenderer.positionCount++;
-            lineRenderer.SetPosition(index, tracker.position);
+            index = powerRenderer.positionCount++;
+            powerRenderer.SetPosition(index, tracker.position);
 
             if (wirePoints.Count > 0) return;
-            ResetLevel();
+            IncrementLevel();
         }
         else
         {
@@ -136,22 +146,8 @@ public class ScoreKeeper : MonoBehaviour
         }
         else
         {
-            levelManager.CurrentLevel.ClearLevel();
-            currentCircuitComponents.Clear();
             FailLevel();
         }
-    }
-
-    void ResumeIdleAnim()
-    {
-        resetScreen.color = new(0, 0, 0, 0);
-        animator.CrossFade("Idle", 0, 0);
-    }
-
-    void IdleDark()
-    {
-        resetScreen.color = new(0, 0, 0, 1);
-        animator.CrossFade("Idle", 0, 0);
     }
 
     public void GradeLevel()
@@ -160,8 +156,8 @@ public class ScoreKeeper : MonoBehaviour
         wirePoints.Reverse();
         tracker.position = wirePoints[0];
         wirePoints.RemoveAt(wirePoints.Count - 1);
-        lineRenderer.positionCount = 1;
-        lineRenderer.SetPosition(0, tracker.position);
+        powerRenderer.positionCount = 1;
+        powerRenderer.SetPosition(0, tracker.position);
         scoreIndex = 0;
 
         foreach (Transform icon in scoreParent)
@@ -176,7 +172,7 @@ public class ScoreKeeper : MonoBehaviour
         scoreMode = ScoreMode.Grading;
     }
 
-    public void ResetLevel()
+    public void IncrementLevel()
     {
         StartCoroutine(ChangeLevelCoroutine());
     }
@@ -188,6 +184,7 @@ public class ScoreKeeper : MonoBehaviour
 
     public void FailLevel()
     {
+        scoreMode = ScoreMode.Idling;
         animator.CrossFade("FadeFull", 0, 0);
     }
 

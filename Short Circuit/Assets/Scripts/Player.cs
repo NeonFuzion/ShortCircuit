@@ -292,7 +292,7 @@ public class Player : MonoBehaviour
         } 
         if (!found) targetPosition = startPosition + directionVector * currentDistance;
 
-        WireHandle(0);
+        WireHandle(WiringPhase.StartJumping);
         onLaunch?.Invoke();
         playerState = PlayerState.Launching;
     }

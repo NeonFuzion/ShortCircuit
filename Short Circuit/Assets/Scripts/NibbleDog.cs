@@ -19,7 +19,7 @@ public class NibbleDog : Dog
                 break;
             case DogState.Wandering:
                 DetectPlayer();
-                Vector3 movement = wanderVector * speed * Time.deltaTime;
+                Vector3 movement = wanderVector.normalized * speed * Time.deltaTime;
                 if (movement.sqrMagnitude < ((Vector3)endPosition - transform.position).sqrMagnitude)
                     transform.position += movement;
                 else
@@ -30,8 +30,8 @@ public class NibbleDog : Dog
                 StartIdle();
                 break;
             case DogState.Busy:
-                movement = wanderVector * speed * runSpeedMultiplier * Time.deltaTime;
-                if (!transform.position.Equals(endPosition) && movement.sqrMagnitude < ((Vector3)endPosition - transform.position).sqrMagnitude)
+                movement = wanderVector.normalized * speed * runSpeedMultiplier * Time.deltaTime;
+                if (movement.magnitude < Vector2.Distance(transform.position, endPosition))
                 {
                     transform.position += movement;
                 }
@@ -53,15 +53,22 @@ public class NibbleDog : Dog
         }
 
         if (!player) return;
-        if (Vector2.Distance(player.position, transform.position) > playerDetectRadius) return;
+        Vector2 playerDistanceVector = player.position - transform.position;
+
+        if (playerDistanceVector.magnitude > playerDetectRadius) return;
+        if (Physics2D.Raycast(transform.position, playerDistanceVector, playerDistanceVector.magnitude, LayerMask.GetMask("Ground"))) return;
         Collider2D[] allFound = Physics2D.OverlapCircleAll(transform.position, 40, LayerMask.GetMask("LightBulb"));
 
         if (allFound.Length == 0) return;
-        Transform target = allFound.OrderBy(collider => Vector2.Distance(collider.transform.position, transform.position)).FirstOrDefault().transform;
-        wanderVector = target.position - transform.position;
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, wanderVector, wanderVector.magnitude, boundaryLayer);
+        allFound = allFound.Where(target => {
+                Vector2 lightbulbDistanceVector = target.transform.position - transform.position;
+                return !Physics2D.Raycast(transform.position, lightbulbDistanceVector, lightbulbDistanceVector.magnitude, boundaryLayer);
+            }).ToArray();
 
-        if (hit) return;
+        if (allFound.Length == 0) return;
+        Transform target = allFound
+            .OrderBy(collider => Vector2.Distance(collider.transform.position, transform.position))
+            .FirstOrDefault().transform;
         onDetectPlayer?.Invoke();
         endPosition = target.position;
         dogState = DogState.Busy;

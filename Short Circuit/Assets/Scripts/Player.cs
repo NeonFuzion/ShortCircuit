@@ -41,8 +41,6 @@ public class Player : MonoBehaviour
         animator = GetComponent<Animator>();
         aimRenderer = target.GetChild(0).GetComponent<SpriteRenderer>();
         mubRenderer = projectileVisual.GetChild(0).GetComponent<SpriteRenderer>();
-
-        StartLevel();
     }
 
     // Update is called once per frame
@@ -249,6 +247,8 @@ public class Player : MonoBehaviour
         this.max = max;
         this.battery = battery;
         this.levelTarget = levelTarget;
+
+        StartLevel();
     }
 
     public void HandleMovement(InputAction.CallbackContext context)

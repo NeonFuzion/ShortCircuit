@@ -34,8 +34,6 @@ public class ScoreKeeper : MonoBehaviour
         if (!Instance) Instance = this;
 
         currentCircuitComponents = new ();
-
-        StartLevel();
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -56,18 +54,6 @@ public class ScoreKeeper : MonoBehaviour
         scoreMode = ScoreMode.Idling;
         yield return new WaitForSeconds(resetTime);
         StartGame();
-    }
-
-    void StartLevel()
-    {
-        scoreParent.gameObject.SetActive(false);
-        scoreMode = ScoreMode.Timing;
-        LevelParent level = levelManager.CurrentLevel;
-        currentTime = level.Time;
-        allCircuitComponents = levelManager.CurrentCircuitComponents;
-        currentCircuitComponents.Clear();
-        player.Initialize(allCircuitComponents.Count, level.transform, level.Battery);
-        onStartLevel?.Invoke();
     }
 
     void ResetFailedLevel()
@@ -170,6 +156,18 @@ public class ScoreKeeper : MonoBehaviour
         }
         scoreParent.gameObject.SetActive(true);
         scoreMode = ScoreMode.Grading;
+    }
+
+    public void StartLevel()
+    {
+        scoreParent.gameObject.SetActive(false);
+        scoreMode = ScoreMode.Timing;
+        LevelParent level = levelManager.CurrentLevel;
+        currentTime = level.Time;
+        allCircuitComponents = levelManager.CurrentCircuitComponents;
+        currentCircuitComponents.Clear();
+        player.Initialize(allCircuitComponents.Count, level.transform, level.Battery);
+        onStartLevel?.Invoke();
     }
 
     public void IncrementLevel()

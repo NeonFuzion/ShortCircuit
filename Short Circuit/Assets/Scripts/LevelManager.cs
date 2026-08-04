@@ -19,11 +19,7 @@ public class LevelManager : MonoBehaviour
 
     void Awake()
     {
-        index = 0;
-
         levelParents = levels.GetComponentsInChildren<LevelParent>().Select(levelParent => levelParent.gameObject).ToArray();
-
-        InitializeLevel();
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -72,5 +68,12 @@ public class LevelManager : MonoBehaviour
         {
             level.gameObject.SetActive(true);
         }
+    }
+
+    public void StartLevelAtIndex(int index)
+    {
+        this.index = index;
+
+        InitializeLevel();
     }
 }
